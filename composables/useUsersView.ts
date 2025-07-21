@@ -156,6 +156,7 @@ export const useUsersView = () => {
         detail: t("deleteUser.toasts.adminDelete.message"),
         life: 5000, // Show for 5 seconds
       });
+      deleting.value = false; // Reset deleting state
       return;
     } else {
       try {
