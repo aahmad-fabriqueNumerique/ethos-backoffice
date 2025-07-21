@@ -514,7 +514,7 @@
       "news": "Informations"
     },
     "toasts": {
-      "success": "Aucune notification envoyée | Une notification envoyée avec succès | {n} notifications envoyées avec succès"
+      "success": "Aucune notification envoyée | Une notification envoyée avec succès |  Notification envoyées avec succès à {n} utilisateurs"
     }
   },
   "newNotif": {
