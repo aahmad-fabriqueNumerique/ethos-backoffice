@@ -69,10 +69,11 @@ export const useNewSong = () => {
       type_de_chanson: z
         .array(
           z
-            .string({ required_error: "required_song_type" })
+            .string()
             .regex(regexOptionalGeneric, { message: "invalid_song_type" })
         )
-        .min(1, { message: "no_song_type" }), // Ensure at least one type is selected
+        .optional()
+        .default([]), // Tableau vide par défaut si aucun type n'est sélectionné
       region: z
         .string({ required_error: "no_region" })
         .regex(regexOptionalGeneric, { message: "invalid_region" }),
@@ -87,7 +88,7 @@ export const useNewSong = () => {
       pays: z
         .string({ required_error: "no_country" })
         .regex(regexOptionalGeneric, { message: "invalid_country" }),
-      language: z
+      langue: z
         .string({ required_error: "no_language" })
         .regex(regexOptionalGeneric, { message: "invalid_language" }),
       album: z
@@ -95,8 +96,9 @@ export const useNewSong = () => {
         .regex(regexOptionalGeneric, { message: "invalid_album" })
         .optional(),
       theme: z
-        .string({ required_error: "no_theme" })
-        .regex(regexOptionalGeneric, { message: "invalid_theme" }),
+        .string()
+        .regex(regexOptionalGeneric, { message: "invalid_theme" })
+        .optional(),
       context_historique: z
         .string()
         .regex(regexOptionalGeneric, { message: "invalid_context" })

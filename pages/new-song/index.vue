@@ -222,7 +222,7 @@ const showDialog = ref(false);
         <span class="flex flex-col gap-y-2">
           <SelectWithTranslation
             :options="languages"
-            name="language"
+            name="langue"
             :label="t('newSong.labels.language')"
             :placeholder="t('newSong.placeholders.language')"
             description="langue du chant"
@@ -486,7 +486,12 @@ const showDialog = ref(false);
           variant="text"
           @click="onCancel"
         />
-        <Button type="submit" :label="t('newSong.save')" />
+        <Button
+          type="submit"
+          :label="t('newSong.save')"
+          :loading="isLoading"
+          :disabled="isLoading"
+        />
       </div>
     </Form>
     <DialogAddCountry :visible="showDialog" @set-visible="showDialog = false" />
