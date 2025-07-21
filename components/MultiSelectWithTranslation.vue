@@ -16,7 +16,7 @@ const { t } = useI18n();
 
 <template>
   <Field v-slot="{ field, errorMessage, handleChange }" :name="name">
-    <label :for="name">{{ label }} *</label>
+    <label :for="name">{{ label }}</label>
     <MultiSelect
       :id="name"
       :model-value="field.value"
