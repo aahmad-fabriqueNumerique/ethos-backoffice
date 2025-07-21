@@ -1,0 +1,567 @@
+{
+  "api": {
+    "unknown_error": "Le serveur est injoignable, si le problème persiste, veuillez contacter l'assistance."
+  },
+  "data": {
+    "eventTypes": {
+      "live_concert": "Concert en direct",
+      "festival": "Festival"
+    },
+    "countries": {
+      "fr": "France",
+      "en": "Angleterre",
+      "es": "Espagne",
+      "ca": "Catalogne",
+      "eu": "Pays-Basque",
+      "oc": "Occitanie",
+      "co": "Corse",
+      "pt": "Portugual",
+      "rcf": "Réunion"
+    },
+
+    "languages": {
+      "fr": "Français",
+      "en": "Anglais",
+      "es": "Espagnol",
+      "ca": "Catalan",
+      "eu": "Basque",
+      "oc": "Occitan",
+      "co": "Corse",
+      "pt": "Portuguais",
+      "rcf": "Réunionnais"
+    },
+    "songTypes": {
+      "folk_song": "chant folklorique",
+      "lullaby": "berceuse",
+      "hymn": "hymne (religieux)",
+      "anthem": "hymne national / emblème",
+      "ballad": "ballade (chant narratif)",
+      "sea_shanty": "chant de marin",
+      "work_song": "chant de travail",
+      "protest_song": "chant de protestation",
+      "spiritual": "spirituel (chant religieux afro-américain)",
+      "choral_song": "chant choral / de chorale",
+      "opera_aria": "air d’opéra",
+      "recitative": "récitatif (chant parlé dans l’opéra)",
+      "art_song": "mélodie / chant savant",
+      "war_song": "chant de guerre",
+      "drinking_song": "chanson à boire",
+      "nursery_rhyme": "comptine",
+      "patriotic_song": "chant patriotique",
+      "sacred_song": "chant sacré",
+      "devotional_song": "chant dévotionnel",
+      "funeral_song": "chant funèbre / complainte",
+      "wedding_song": "chant de mariage",
+      "healing_song": "chant de guérison",
+      "tribal_chant": "chant tribal",
+      "praise_song": "chant de louange",
+      "incantation": "incantation / chant magique",
+      "battle_cry": "cri de guerre",
+      "singspiel": "chant d’opéra parlé (genre allemand)",
+      "madrigal": "madrigal (chant Renaissance)",
+      "motet": "motet (chant religieux polyphonique)",
+      "psalm": "psaume",
+      "carol": "chant de Noël",
+      "gospel_hymn": "hymne gospel",
+      "requiem": "requiem (messe des morts chantée)",
+      "gregorian_chant": "chant grégorien",
+      "mantra": "mantra (chant spirituel hindou/bouddhiste)",
+      "throat_singing": "chant diphonique",
+      "yodel": "yodel (chant tyrolien)",
+      "liturgical_chant": "chant liturgique",
+      "cantata": "cantate (chant religieux ou profane)"
+    }
+  },
+
+  "error": {
+    "credentials": "Identifiant ou mot de passe incorrect",
+    "no_password": "Un mot de passe est requis",
+    "not_valid_password": "Le mot de passe n'est pas valide",
+    "no_email": "Une adresse email est requise",
+    "not_valid_email": "Adresse email non valide"
+  },
+  "loginForm": {
+    "welcome": "Bienvenue",
+    "login": "Se Connecter"
+  },
+  "navbar": {
+    "songs": "Chants",
+    "regions": "Régions",
+    "languages": "Langues",
+    "themes": "Thèmes",
+    "events": "Événements",
+    "users": "Utilisateurs",
+    "notifications": "Notifications"
+  },
+  "pagination": {
+    "to": "à",
+    "from": "de"
+  },
+  "songs": {
+    "totalSongs": "Aucun chant | Un chant | {n} chants",
+    "pageTitle": "Chants",
+    "addSong": "Ajouter un chant",
+    "addSongs": "Importer des chants",
+    "tooltips": {
+      "addSong": "Ajouter un nouveau chant",
+      "addSongs": "Importer des chants depuis un fichier CSV"
+    },
+    "headers": {
+      "title": "Titre",
+      "author": "Artiste",
+      "country": "Pays",
+      "language": "Langue"
+    },
+    "errors": {
+      "no_title": "Un titre est requis",
+      "invalid_title": "Le titre n'est pas valide",
+      "no_author": "Un artiste est requis",
+      "invalid_author": "L'artiste n'est pas valide",
+      "no_composer": "Un compositeur est requis",
+      "invalid_composer": "Le compositeur n'est pas valide",
+      "no_lyrics": "Les paroles sont requises",
+      "invalid_lyrics": "Les paroles ne sont pas valides",
+      "no_region": "Une région est requise",
+      "invalid_region": "La région n'est pas valide",
+      "invalid_interpreter": "L'interprète n'est pas valide",
+      "no_country": "Un pays est requis",
+      "invalid_country": "Le pays n'est pas valide",
+      "no_geographical_region": "Un libellé de région géographique est requis",
+      "invalid_geographical_region": "Le libellé de la région géographique n'est pas valide",
+      "no_language": "Une langue est requise",
+      "invalid_language": "La langue n'est pas valide",
+      "invalid_album": "L'album n'est pas valide",
+      "no_theme": "Un thème est requis",
+      "invalid_theme": "Le thème n'est pas valide",
+      "invalid_context": "Le contexte n'est pas valide",
+      "invalid_description": "La description n'est pas valide",
+      "invalid_url": "L'URL n'est pas valide",
+      "invalid_music_url": "L'URL de la musique n'est pas valide",
+      "required_song_type": "Un type de chant est requis",
+      "invalid_song_type": "Le type de chant n'est pas valide",
+      "no_song_type": "Choisissez au moins un type de chant"
+    }
+  },
+  "newSong": {
+    "addSong": "Ajouter un chant",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "addInterpreter": "Ajouter un interprète",
+
+    "labels": {
+      "title": "Titre",
+      "author": "Artiste",
+      "composer": "Compositeur",
+      "lyrics": "Paroles",
+      "songType": "Type de chant",
+      "region": "Région",
+      "country": "Pays",
+      "geographicalRegion": "Libellé de la région géographique",
+      "interpreters": "Interprètes",
+      "interpreter": "Interprète",
+      "language": "Langue",
+      "album": "Album",
+      "theme": "Thème",
+      "context": "Contexte",
+      "description": "Description",
+      "url": "URL du chant",
+      "musicUrl": "URL de la musique",
+      "archived": "Archivé"
+    },
+    "placeholders": {
+      "title": "Entrez le titre du chant",
+      "author": "Entrez le nom de l'artiste",
+      "composer": "Entrez le nom du compositeur",
+      "lyrics": "Entrez les paroles du chant",
+      "songType": "Sélectionnez le type de chant",
+      "region": "Sélectionnez une région",
+      "country": "Sélectionnez un pays",
+      "geographicalRegion": "Entrez le libellé de la région géographique",
+      "language": "Sélectionnez une langue",
+      "album": "Entrez le nom de l'album",
+      "theme": "Sélectionnez un thème",
+      "context": "Sélectionnez un contexte",
+      "description": "Entrez une description du chant",
+      "url": "Entrez l'URL du chant",
+      "musicUrl": "Entrez l'URL de la musique"
+    },
+    "dialog": {
+      "header": "Ajouter un pays",
+      "cancel": "Annuler",
+      "save": "Ajouter",
+      "description": "Ajouter un nouveau pays à la liste le temps de votre session.",
+      "placeholder": "Entrez le nom du pays",
+      "tooltip": "Ajoute provisoirement un pays à la liste des pays disponibles. Il sera supprimé à la fin de votre session."
+    }
+  },
+  "regions": {
+    "list": "Régions",
+    "addData": "Ajouter une région",
+    "hideNewRegionForm": "Masquer le formulaire",
+    "totalItems": "Aucune région | Une région | {n} régions",
+    "headers": {
+      "name": "Région",
+      "region_geographique_libelle": "Libellé Région"
+    },
+    "errors": {
+      "required_region_name": "Le nom de la région est requis",
+      "required_geographical_region": "Le libellé de la région géographique est requis",
+      "invalid_region_name": "Le nom de la région n'est pas valide",
+      "invalid_geographical_region": "Le libellé de la région géographique n'est pas valide"
+    }
+  },
+  "languages": {
+    "list": "Langues",
+    "addData": "Ajouter une langue",
+    "hideNewLanguageForm": "Masquer le formulaire",
+    "totalItems": "Aucune langue | Une langue | {n} langues",
+    "headers": {
+      "name": "Langue"
+    },
+    "errors": {
+      "required_language_name": "Le nom de la langue est requis",
+      "invalid_name": "Le nom de la langue n'est pas valide",
+      "name_too_short": "Le nom de la langue doit comporter au moins 2 caractères",
+      "name_too_long": "Le nom de la langue ne doit pas dépasser 50 caractères"
+    },
+    "labels": {
+      "name": "Nom de la langue"
+    },
+    "placeholders": {
+      "name": "Entrez le nom de la langue"
+    }
+  },
+  "themes": {
+    "list": "Thèmes",
+    "addData": "Ajouter un thème",
+    "hideNewThemeForm": "Masquer le formulaire",
+    "totalItems": "Aucun thème | Un thème | {n} thèmes",
+    "errors": {
+      "required_name": "Le nom du thème est requis",
+      "invalid_name": "Le nom du thème n'est pas valide",
+      "name_too_short": "Le nom du thème doit comporter au moins 2 caractères",
+      "name_too_long": "Le nom du thème ne doit pas dépasser 50 caractères"
+    },
+    "labels": {
+      "titre": "Nom du thème"
+    },
+    "placeholders": {
+      "titre": "Entrez le nom du thème"
+    },
+    "headers": {
+      "title": "Titre"
+    }
+  },
+  "events": {
+    "list": "Événements",
+    "addData": "Ajouter un événement",
+    "totalItems": "Aucun événement | Un événement | {n} événements",
+    "headers": {
+      "name": "Nom de l'événement",
+      "date": "Date de l'événement"
+    },
+    "empty": "Aucun événement trouvé",
+    "errors": {
+      "required_name": "Le nom de l'événement est requis",
+      "invalid_name": "Le nom de l'événement n'est pas valide",
+      "name_too_short": "Le nom de l'événement doit comporter au moins 2 caractères",
+      "name_too_long": "Le nom de l'événement ne doit pas dépasser 50 caractères",
+      "required_date": "La date de l'événement est requise",
+      "invalid_date": "La date de l'événement n'est pas valide"
+    },
+    "labels": {
+      "name": "Nom de l'événement",
+      "date": "Date de l'événement"
+    },
+    "placeholders": {
+      "name": "Entrez le nom de l'événement",
+      "date": "Sélectionnez la date de l'événement"
+    },
+    "tooltips": {
+      "update": "Modifier l'événement",
+      "delete": "Supprimer l'événement"
+    },
+    "table": {
+      "headers": {
+        "title": "Titre",
+        "type": "Type d'événement",
+        "city": "Ville",
+        "country": "Pays",
+        "startDate": "Date",
+        "actions": "Actions"
+      }
+    },
+    "dialog": {
+      "delete": {
+        "message": "Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.",
+        "title": "Supprimer l'événement",
+        "confirm": "Confirmer la suppression",
+        "cancel": "Annuler"
+      }
+    }
+  },
+  "newEvent": {
+    "title": "Ajouter un événement",
+    "save": "Enregistrer",
+    "basicInfo": "Informations de base",
+    "dateTime": "Période",
+    "location": "Lieu",
+    "contact": "Contact",
+    "otherInfos": "Autres informations",
+
+    "buttons": {
+      "create": "Créer un événement",
+      "cancel": "Annuler",
+      "addParticipant": "Ajouter un participant",
+      "addSocialNetwork": "Ajouter un réseau social",
+      "imageUpload": "Choisir une image"
+    },
+
+    "labels": {
+      "titre": "Nom de l'événement",
+      "type": "Type d'événement",
+      "description": "Description",
+      "startDate": "Date de début",
+      "endDate": "Date de fin",
+      "location": "Lieu",
+      "address": "Adresse",
+      "city": "Ville",
+      "postalCode": "Code postal",
+      "country": "Pays",
+      "phone": "Téléphone",
+      "email": "Email",
+      "socialNetworks": "Réseaux sociaux",
+      "participants": "Participants",
+      "image": "Affiche de l'événement (facultatif)"
+    },
+    "placeholders": {
+      "title": "Entrez le nom de l'événement",
+      "type": "Sélectionnez le type d'événement",
+      "description": "Entrez une description de l'événement",
+      "startDate": "Sélectionnez la date de début",
+      "endDate": "Sélectionnez la date de fin",
+      "location": "Entrez le lieu de l'événement",
+      "address": "Entrez l'adresse",
+      "city": "Entrez la ville",
+      "postalCode": "Entrez le code postal",
+      "country": "Sélectionnez le pays",
+      "phone": "Entrez un numéro de téléphone pour contacter l'organisateur",
+      "email": "Entrez une adresse email pour contacter l'organisateur",
+      "socialNetwork": "Entrez les liens vers les réseaux sociaux de l'événement (facultatif)",
+      "participants": "Liste des participants (facultatif)"
+    },
+    "errors": {
+      "required_title": "Le titre de l'événement est obligatoire",
+      "invalid_title": "Le format du titre n'est pas valide",
+      "required_description": "La description de l'événement est obligatoire",
+      "invalid_description": "Le format de la description n'est pas valide",
+      "required_type": "Le type d'événement est obligatoire",
+      "invalid_type": "Le type d'événement n'est pas valide",
+      "required_start_date": "La date de début est obligatoire",
+      "start_date_in_past": "La date de début ne peut pas être dans le passé",
+      "required_end_date": "La date de fin est obligatoire",
+      "end_date_in_past": "La date de fin ne peut pas être dans le passé",
+      "required_address": "L'adresse est obligatoire",
+      "invalid_address": "Le format de l'adresse n'est pas valide",
+      "required_postal_code": "Le code postal est obligatoire",
+      "invalid_postal_code": "Le code postal doit contenir exactement 5 chiffres",
+      "required_city": "La ville est obligatoire",
+      "invalid_city": "Le nom de la ville n'est pas valide",
+      "required_country": "Le pays est obligatoire",
+      "invalid_country": "Le nom du pays n'est pas valide",
+      "required_phone": "Le numéro de téléphone est obligatoire",
+      "invalid_phone": "Le format du numéro de téléphone n'est pas valide",
+      "required_email": "L'adresse email est obligatoire",
+      "invalid_email": "L'adresse email n'est pas valide",
+      "required_image": "L'image de l'événement est obligatoire",
+      "invalid_image_url": "L'URL de l'image doit pointer vers une image (png, jpg, jpeg, gif ou webp)",
+      "invalid_social_media": "Le format du lien de réseau social n'est pas valide",
+      "invalid_participant": "Le format du nom du participant n'est pas valide"
+    },
+    "imageUpload": {
+      "pending": "En attente",
+      "completed": "Terminé",
+      "dragDrop": "Glissez et déposez des images ici ou cliquez pour sélectionner",
+      "maxSize": "Taille maximale: 1MB"
+    }
+  },
+  "users": {
+    "title": "Liste des utilisateurs",
+    "totalUsers": "Aucun utilisateur | Un utilisateur | {n} utilisateurs",
+    "headers": {
+      "email": "Email",
+      "role": "Rôle",
+      "actions": "Actions"
+    },
+    "actions": {
+      "edit": "Modifier le profil de l'utilisateur",
+      "delete": "Supprimer l'utilisateur"
+    },
+    "buttons": {
+      "refresh": "Recharger la liste"
+    },
+    "errors": {
+      "no_users_found": "Aucun utilisateur trouvé"
+    },
+    "tabUsers": "Utilisateurs enregistrés",
+    "tooltips": {
+      "refresh": "Recharger la liste des utilisateurs",
+      "activate": "Activer les utilisateurs sélectionnés",
+      "delete": "Supprimer les utilisateurs sélectionnés"
+    },
+    "waitingList": {
+      "tabTitle": "Liste d'attente",
+      "noUser": "Aucun utilisateur en attente de validation",
+      "totalItems": "Aucun utilisateur en attente | Un utilisateur en attente | {n} utilisateurs en attente",
+      "toasts": {
+        "error": {
+          "summary": "Erreur"
+        },
+        "success": {
+          "summary": "Succès",
+          "message": "Les comptes des utilisateurs sélectionnées ont bien été activés."
+        }
+      },
+      "errors": {
+        "invalid_email": "L'adresse email n'est pas valide",
+        "invalid_role": "Le rôle n'est pas valide",
+        "email_already_exists": "Cette adresse email est déjà utilisée par un autre utilisateur",
+        "user_not_found": "Utilisateur non trouvé",
+        "bad_request": "Requête invalide, veuillez réessayer"
+      }
+    }
+  },
+  "mailUpdate": {
+    "header": "Modifier le profil",
+    "description": "Mettre les informations à jour",
+    "labels": {
+      "email": "Adresse email",
+      "role": "Rôle"
+    },
+    "placeholders": {
+      "email": "Entrez votre adresse email",
+      "role": "Sélectionnez votre rôle"
+    },
+    "roles": {
+      "admin": "Administrateur",
+      "user": "Utilisateur",
+      "groupe": "Groupe",
+      "organisateur": "Organisateur"
+    },
+    "buttons": {
+      "save": "Enregistrer",
+      "cancel": "Annuler"
+    },
+    "errors": {
+      "invalid_email": "L'adresse email n'est pas valide",
+      "invalid_role": "Le rôle n'est pas valide",
+      "email_already_exists": "Cette adresse email est déjà utilisée par un autre utilisateur",
+      "user_not_found": "Utilisateur non trouvé",
+      "bad_request": "Requête invalide, veuillez réessayer"
+    },
+    "toasts": {
+      "success": {
+        "summary": "Succès",
+        "message": "Le compte a été mis à jour avec succès."
+      },
+      "error": {
+        "summary": "Erreur",
+        "message": "Une erreur s'est produite lors de la mise à jour du profil. Veuillez réessayer."
+      },
+      "button": "Recharger la liste des utilisateurs"
+    }
+  },
+  "deleteUser": {
+    "toasts": {
+      "adminDelete": {
+        "summary": "Erreur",
+        "message": "Vous ne pouvez pas supprimer un utilisateur administrateur. Veuillez contacter l'assistance si nécessaire."
+      },
+      "success": {
+        "summary": "Succès",
+        "message": "L'utilisateur a été supprimé."
+      }
+    },
+    "errors": {
+      "not_found": "L'utilisateur n'existe pas ou a déjà été supprimé.",
+      "admin_user": "Vous ne pouvez pas supprimer un utilisateur administrateur.",
+      "default_error": "Une erreur s'est produite lors de la suppression de l'utilisateur. Veuillez réessayer."
+    },
+    "modal": {
+      "title": "Supprimer l'utilisateur",
+      "description": "Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.",
+      "confirm": "Confirmer la suppression",
+      "cancel": "Annuler"
+    }
+  },
+  "cleanEvents": {
+    "button": "Supprimer les évènements passés",
+    "toasts": {
+      "success": {
+        "summary": "Suppression des évènement passés",
+        "message": "Aucun évènement terminé depuis deux mois n'a été trouvé | Un évènement passé a été supprimé | {n} évènements passés ont été supprimés"
+      },
+      "error": {
+        "summary": "Suppression des évènement passés",
+        "message": "Une erreur s'est produite lors de la suppression des événements passés. Veuillez réessayer."
+      }
+    }
+  },
+  "notifications": {
+    "types": {
+      "event": "Nouvel évènement",
+      "song": "Nouveau chant",
+      "news": "Informations"
+    },
+    "toasts": {
+      "success": "Aucune notification envoyée | Une notification envoyée avec succès | {n} notifications envoyées avec succès"
+    }
+  },
+  "newNotif": {
+    "title": "Notifications",
+    "labels": {
+      "title": "Titre",
+      "message": "Message",
+      "type": "Type de notification"
+    },
+    "placeholders": {
+      "title": "Entrez le titre de la notification",
+      "message": "Entrez le message de la notification",
+      "type": "Sélectionnez le type de notification"
+    },
+    "errors": {
+      "required_title": "Le titre de la notification est requis",
+      "invalid_title": "Le titre de la notification n'est pas valide",
+      "required_message": "Le message de la notification est requis",
+      "invalid_message": "Le message contient des caractères non autorisés"
+    },
+    "buttons": {
+      "send": "Envoyer la notification",
+      "cancel": "Annuler"
+    }
+  },
+  "updateEvent": {
+    "pageTitle": "Mettre à jour un événement",
+    "buttons": {
+      "backToEvents": "Retour aux événements"
+    },
+    "tooltips": {
+      "backToEvents": "Si vous retournez à la liste des événements, les modifications non enregistrées seront perdues."
+    }
+  },
+  "newSongs": {
+    "pageTitle": "Importer des chants",
+    "uploadButton": "Téléverser un fichier CSV",
+    "instructions": "Glissez déposez un fichier CSV ou cliquer le bouton ci-dessus pour sélectionner un fichier à importer.",
+    "buttons": {
+      "cancel": "Annuler",
+      "upload": "Téléverser",
+      "selectFile": "Sélectionner un fichier",
+      "backToList": "Retour à la liste des chants"
+    },
+    "fileErrors": {
+      "size": "Le fichier doit faire moins de 10 Mo.",
+      "type": "Le fichier doit être au format CSV."
+    }
+  }
+}

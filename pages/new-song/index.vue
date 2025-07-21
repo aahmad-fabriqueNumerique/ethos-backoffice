@@ -1,0 +1,494 @@
+<script setup lang="ts">
+/**
+ * New Song View Component
+ *
+ * This component provides a comprehensive form interface for adding new songs to the database.
+ * Features include:
+ * - Validation using vee-validate and Zod
+ * - Responsive grid layout for optimal display across devices
+ * - Dynamic interpreter fields management
+ * - Integration with Firestore database
+ * - Multiple field types (text, select, textarea, checkbox)
+ * - Full internationalization support
+ *
+ * @component NewSongView
+ */
+import type { SongCreate } from "@/models/Song";
+import {
+  Field,
+  Form,
+  type GenericObject,
+  type SubmissionHandler,
+} from "vee-validate";
+import { useI18n } from "vue-i18n";
+
+definePageMeta({
+  layout: "home",
+  title: "Nouveau chant",
+});
+
+// Initialize i18n for translations
+const { t } = useI18n();
+// Router for navigation after form actions
+const router = useRouter();
+
+/**
+ * Dynamic array for managing multiple interpreter fields
+ * Starts with one empty field by default
+ */
+const interpretesList = ref([""]);
+
+/**
+ * Adds a new empty interpreter field to the list
+ * Called when user clicks the "Add interpreter" button
+ */
+const addInterprete = () => {
+  interpretesList.value.push("");
+};
+
+/**
+ * Get form management assets from the song creation composable:
+ * - onSubmit: Function to handle form submission
+ * - newSongFormSchema: Validation schema for the form
+ * - isLoading: Loading state indicator
+ * - regions: Available regions for selection
+ */
+const {
+  onCancel,
+  onSubmit,
+  newSongFormSchema,
+  isLoading,
+  regions,
+  languages,
+  songTypes,
+  themes,
+  countries,
+} = useNewSong();
+
+/**
+ * Removes an interpreter field at the specified index
+ * Won't remove the last remaining field to ensure at least one is available
+ *
+ * @param {number} index - The array index of the interpreter to remove
+ */
+const removeInterprete = (index: number) => {
+  interpretesList.value.splice(index, 1);
+};
+
+/**
+ * Form submission handler
+ * Processes validated form data and passes it to the submission function
+ *
+ * @param {GenericObject} values - The validated form values
+ */
+const handleSubmit: SubmissionHandler<GenericObject> = (
+  values: GenericObject
+) => {
+  console.log("Form submitted with values:", values);
+  onSubmit(values as SongCreate);
+};
+
+/**
+ * Form cancellation handler
+ * Resets the interpreter fields and navigates back to the songs list
+ */
+const handleCancel = () => {
+  interpretesList.value = [""]; // Reset to one empty interpreter field
+  router.replace({ name: "chants" }); // Navigate back to songs list
+};
+
+const showDialog = ref(false);
+</script>
+
+<template>
+  <main class="w-5/6 mx-auto mt-8 flex flex-col gap-y-8">
+    <!-- Header section with title and action button -->
+    <ViewHeader :title="t('newSong.addSong')" url="/home/new" />
+
+    <Form
+      class="flex flex-col gap-y-8"
+      :validation-schema="newSongFormSchema"
+      :is-loading="isLoading"
+      @submit="handleSubmit"
+      @reset="handleCancel"
+      @invalid-submit="(errors) => console.log('Validation failed:', errors)"
+    >
+      <!-- Basic Information -->
+      <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Title field -->
+        <span class="flex flex-col gap-y-2">
+          <Field v-slot="{ field, errorMessage }" name="titre">
+            <label for="titre">{{ t("newSong.labels.title") }}</label>
+            <InputText
+              id="titre"
+              fluid
+              v-bind="field"
+              name="titre"
+              aria-label="titre"
+              :placeholder="t('newSong.placeholders.title')"
+              :invalid="!!errorMessage"
+            />
+            <!-- Error message display -->
+            <Message
+              v-if="errorMessage !== undefined"
+              class="text-xs text-error"
+              severity="error"
+            >
+              {{ t(`songs.errors.${errorMessage}`) }}
+            </Message>
+          </Field>
+        </span>
+
+        <!-- Author field -->
+        <span class="flex flex-col gap-y-2">
+          <Field v-slot="{ field, errorMessage }" name="auteur">
+            <label for="auteur">{{ t("newSong.labels.author") }}</label>
+            <InputText
+              id="auteur"
+              fluid
+              v-bind="field"
+              name="auteur"
+              aria-label="auteur"
+              :placeholder="t('newSong.placeholders.author')"
+              :invalid="!!errorMessage"
+            />
+            <!-- Error message display -->
+            <Message
+              v-if="errorMessage !== undefined"
+              class="text-xs text-error"
+              severity="error"
+            >
+              {{ t(`songs.errors.${errorMessage}`) }}
+            </Message>
+          </Field>
+        </span>
+
+        <!-- Composer field -->
+        <span class="flex flex-col gap-y-2">
+          <Field v-slot="{ field, errorMessage }" name="compositeur">
+            <label for="compositeur">{{ t("newSong.labels.composer") }}</label>
+            <InputText
+              id="compositeur"
+              fluid
+              v-bind="field"
+              name="compositeur"
+              aria-label="compositeur"
+              :placeholder="t('newSong.placeholders.composer')"
+              :invalid="!!errorMessage"
+            />
+            <!-- Error message display -->
+            <Message
+              v-if="errorMessage !== undefined"
+              class="text-xs text-error"
+              severity="error"
+            >
+              {{ t(`songs.errors.${errorMessage}`) }}
+            </Message>
+          </Field>
+        </span>
+
+        <!-- Country field -->
+        <span class="flex flex-col gap-y-2">
+          <SelectWithTranslation
+            :options="countries"
+            name="pays"
+            :label="t('newSong.labels.country')"
+            :placeholder="t('newSong.placeholders.country')"
+            description="Pays d'origine"
+            category="songs"
+          >
+            <Button
+              v-tooltip.bottom="t('newSong.dialog.tooltip')"
+              type="button"
+              icon="pi pi-plus"
+              @click="showDialog = !showDialog"
+            />
+          </SelectWithTranslation>
+        </span>
+
+        <!-- Region field -->
+        <span class="flex flex-col gap-y-2">
+          <SelectWithTranslation
+            :options="regions"
+            name="region"
+            :label="t('newSong.labels.region')"
+            :placeholder="t('newSong.placeholders.region')"
+            description="Région d'origine"
+            category="songs"
+          />
+        </span>
+
+        <!-- Language field -->
+        <span class="flex flex-col gap-y-2">
+          <SelectWithTranslation
+            :options="languages"
+            name="language"
+            :label="t('newSong.labels.language')"
+            :placeholder="t('newSong.placeholders.language')"
+            description="langue du chant"
+            category="songs"
+          />
+        </span>
+
+        <!-- Song type field (optional) -->
+        <span class="flex flex-col gap-y-2">
+          <MultiSelectWithTranslation
+            id="type_de_chanson"
+            :options="songTypes"
+            name="type_de_chanson"
+            description="type de chanson"
+            :label="t('newSong.labels.songType')"
+            :placeholder="t('newSong.placeholders.songType')"
+            category="songs"
+          />
+        </span>
+
+        <!-- Album field (optional) -->
+        <span class="flex flex-col gap-y-2">
+          <Field v-slot="{ field, errorMessage }" name="album">
+            <label for="album">{{ t("newSong.labels.album") }}</label>
+            <InputText
+              id="album"
+              fluid
+              v-bind="field"
+              name="album"
+              aria-label="album"
+              :placeholder="t('newSong.placeholders.album')"
+              :invalid="!!errorMessage"
+            />
+            <!-- Error message display -->
+            <Message
+              v-if="errorMessage !== undefined"
+              class="text-xs text-error"
+              severity="error"
+            >
+              {{ t(`songs.errors.${errorMessage}`) }}
+            </Message>
+          </Field>
+        </span>
+
+        <!-- Theme field -->
+        <span class="flex flex-col gap-y-2">
+          <SelectWithTranslation
+            :options="themes"
+            name="theme"
+            :label="t('newSong.labels.theme')"
+            :placeholder="t('newSong.placeholders.theme')"
+            description="Thème du chant"
+            category="songs"
+          />
+        </span>
+      </div>
+
+      <!-- Interpreters section (array) -->
+      <div class="w-full">
+        <h2 class="text-lg mb-2">{{ t("newSong.labels.interpreters") }}</h2>
+        <div
+          v-for="(_, index) in interpretesList"
+          :key="index"
+          class="flex items-end gap-2 mb-2"
+        >
+          <Field
+            v-slot="{ field, errorMessage }"
+            :name="`interpretes[${index}]`"
+            class="flex-1"
+          >
+            <span class="flex flex-col gap-y-2 w-full">
+              <label :for="`interprete-${index}`"
+                >{{ t("newSong.labels.interpreter") }} {{ index + 1 }}</label
+              >
+              <InputText
+                :id="`interprete-${index}`"
+                fluid
+                v-bind="field"
+                :invalid="!!errorMessage"
+                :placeholder="t('newSong.placeholders.author')"
+              />
+              <!-- Error message display -->
+              <Message
+                v-if="
+                  errorMessage !== undefined &&
+                  field.value &&
+                  field.value.trim() !== ''
+                "
+                class="text-xs text-error"
+                severity="error"
+              >
+                {{ t(`songs.errors.${errorMessage}`) }}
+              </Message>
+            </span>
+          </Field>
+          <Button
+            v-if="interpretesList.length > 1"
+            type="button"
+            icon="pi pi-times"
+            class="p-button-rounded p-button-danger p-button-sm"
+            @click="removeInterprete(index)"
+          />
+        </div>
+        <Button
+          type="button"
+          icon="pi pi-plus"
+          :label="t('newSong.addInterpreter')"
+          class="mt-2"
+          @click="addInterprete"
+        />
+      </div>
+
+      <!-- Longer text fields -->
+      <div class="w-full grid grid-cols-1 gap-4">
+        <!-- Lyrics field -->
+        <span class="flex flex-col gap-y-2">
+          <Field v-slot="{ field, errorMessage }" name="paroles">
+            <label for="paroles">{{ t("newSong.labels.lyrics") }}</label>
+            <Textarea
+              id="paroles"
+              fluid
+              v-bind="field"
+              rows="6"
+              name="paroles"
+              aria-label="paroles"
+              :placeholder="t('newSong.placeholders.lyrics')"
+              :invalid="!!errorMessage"
+            />
+            <!-- Error message display -->
+            <Message
+              v-if="errorMessage !== undefined"
+              class="text-xs text-error"
+              severity="error"
+            >
+              {{ t(`songs.errors.${errorMessage}`) }}
+            </Message>
+          </Field>
+        </span>
+
+        <!-- Historical context field (optional) -->
+        <span class="flex flex-col gap-y-2">
+          <Field v-slot="{ field, errorMessage }" name="contexte_historique">
+            <label for="contexte_historique">{{
+              t("newSong.labels.context")
+            }}</label>
+            <Textarea
+              id="contexte_historique"
+              fluid
+              v-bind="field"
+              rows="4"
+              name="contexte_historique"
+              aria-label="contexte historique"
+              :placeholder="t('newSong.placeholders.context')"
+              :invalid="!!errorMessage"
+            />
+            <!-- Error message display -->
+            <Message
+              v-if="errorMessage !== undefined"
+              class="text-xs text-error"
+              severity="error"
+            >
+              {{ t(`songs.errors.${errorMessage}`) }}
+            </Message>
+          </Field>
+        </span>
+
+        <!-- Description field (optional) -->
+        <span class="flex flex-col gap-y-2">
+          <Field v-slot="{ field, errorMessage }" name="description">
+            <label for="description">{{
+              t("newSong.labels.description")
+            }}</label>
+            <Textarea
+              id="description"
+              fluid
+              v-bind="field"
+              rows="4"
+              name="description"
+              aria-label="description"
+              :placeholder="t('newSong.placeholders.description')"
+              :invalid="!!errorMessage"
+            />
+            <!-- Error message display -->
+            <Message
+              v-if="errorMessage !== undefined"
+              class="text-xs text-error"
+              severity="error"
+            >
+              {{ t(`songs.errors.${errorMessage}`) }}
+            </Message>
+          </Field>
+        </span>
+      </div>
+
+      <!-- URL fields -->
+      <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Web links field (optionnel) -->
+        <span class="flex flex-col gap-y-2">
+          <Field v-slot="{ field, errorMessage }" name="urls">
+            <label for="urls">{{ t("newSong.labels.url") }}</label>
+            <InputText
+              id="urls"
+              fluid
+              v-bind="field"
+              name="urls"
+              aria-label="liens web"
+              :placeholder="t('newSong.placeholders.url')"
+              :invalid="!!errorMessage"
+            />
+            <!-- Error message display -->
+            <Message
+              v-if="errorMessage !== undefined"
+              class="text-xs text-error"
+              severity="error"
+            >
+              {{ t(`songs.errors.${errorMessage}`) }}
+            </Message>
+          </Field>
+        </span>
+
+        <!-- Music URLs field (optionnel) -->
+        <span class="flex flex-col gap-y-2">
+          <Field v-slot="{ field, errorMessage }" name="urls_musique">
+            <label for="urls_musique">{{ t("newSong.labels.musicUrl") }}</label>
+            <InputText
+              id="urls_musique"
+              fluid
+              v-bind="field"
+              name="urls_musique"
+              aria-label="liens musique"
+              :placeholder="t('newSong.placeholders.musicUrl')"
+              :invalid="!!errorMessage"
+            />
+            <!-- Error message display -->
+            <Message
+              v-if="errorMessage !== undefined"
+              class="text-xs text-error"
+              severity="error"
+            >
+              {{ t(`songs.errors.${errorMessage}`) }}
+            </Message>
+          </Field>
+        </span>
+      </div>
+
+      <!-- Archived status -->
+      <div class="w-full">
+        <Field v-slot="{ field }" name="archived">
+          <div class="flex items-center gap-2">
+            <Checkbox v-bind="field" :binary="true" :input-id="'archived'" />
+            <label for="archived">{{ t("newSong.labels.archived") }}</label>
+          </div>
+        </Field>
+      </div>
+
+      <!-- Form submission buttons -->
+      <div class="flex justify-end gap-2">
+        <Button
+          type="button"
+          :label="t('newSong.cancel')"
+          variant="text"
+          @click="onCancel"
+        />
+        <Button type="submit" :label="t('newSong.save')" />
+      </div>
+    </Form>
+    <DialogAddCountry :visible="showDialog" @set-visible="showDialog = false" />
+  </main>
+</template>

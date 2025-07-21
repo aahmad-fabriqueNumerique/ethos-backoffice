@@ -1,0 +1,26 @@
+[
+  { "nom": "Béarn", "region_geographique_libelle": "bearn" },
+  { "nom": "Bretagne", "region_geographique_libelle": "bretagne" },
+  {
+    "nom": "Centre-Val de Loire",
+    "region_geographique_libelle": "centre-val-de-loire"
+  },
+  { "nom": "Corse", "region_geographique_libelle": "corse" },
+  {
+    "nom": "Île-de-France",
+    "region_geographique_libelle": "ile-de-france"
+  },
+  { "nom": "Normandie", "region_geographique_libelle": "normandie" },
+  {
+    "nom": "Occitanie",
+    "region_geographique_libelle": "occitanie"
+  },
+  {
+    "nom": "Pays de la Loire",
+    "region_geographique_libelle": "pays-de-la-loire"
+  },
+  {
+    "nom": "Provence-Alpes-Côte d'Azur",
+    "region_geographique_libelle": "provence-alpes-cote-d-azur"
+  }
+]

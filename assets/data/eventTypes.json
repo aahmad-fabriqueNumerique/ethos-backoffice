@@ -1,0 +1,7 @@
+[
+  { "nom": "concert" },
+  { "nom": "festival" },
+  { "nom": "spectacle" },
+  { "nom": "atelier" },
+  { "nom": "autre" }
+]
