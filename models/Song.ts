@@ -21,22 +21,22 @@
  */
 export interface SongSummary {
   /** Unique identifier for the song */
-  id: string
+  id: string;
 
   /** Title of the song */
-  titre: string
+  titre: string;
 
   /** Artist/performer name */
-  auteur: string
+  auteur: string;
 
   /** Country of origin */
-  pays: string
+  pays: string;
 
   /** Geographical region label (more specific than country) */
-  region_geographique_libelle: string
+  region: string;
 
   /** Language of the song lyrics */
-  langue: string
+  langue: string;
 }
 
 /**
@@ -49,42 +49,42 @@ export interface SongSummary {
  * @interface SongCreate
  * @extends {Omit<SongSummary, 'id'>}
  */
-export interface SongCreate extends Omit<SongSummary, 'id'> {
+export interface SongCreate extends Omit<SongSummary, "id"> {
   /** Composer name (may differ from performer) */
-  compositeur: string
+  compositeur: string;
 
   /** Full lyrics text of the song */
-  paroles: string
+  paroles: string;
 
   /** Category or genre of the song (e.g., "Folk", "Traditional") */
-  type_de_chanson?: string
+  type_de_chanson?: string;
 
   /** Region code/identifier */
-  region: string
+  region: string;
 
   /** List of all performers/interpreters of the song */
-  interpretes?: string[]
+  interpretes?: string[];
 
   /** Album name where the song was published */
-  album?: string
+  album?: string;
 
   /** Thematic classification of the song */
-  theme: string
+  theme: string;
 
   /** Historical background and context information */
-  contexte_historique?: string
+  contexte_historique?: string;
 
   /** Additional descriptive text about the song */
-  description?: string
+  description?: string;
 
   /** Web links related to the song (comma or semicolon separated) */
-  urls?: string
+  urls?: string;
 
   /** Links to audio/video recordings of the song */
-  urls_musique?: string
+  urls_musique?: string;
 
   /** Flag indicating if the song has been archived/removed from active display */
-  archived: boolean
+  archived: boolean;
 }
 
 /**
@@ -99,5 +99,5 @@ export interface SongCreate extends Omit<SongSummary, 'id'> {
  */
 export interface Song extends SongCreate {
   /** Unique identifier for the song */
-  id: string
+  id: string;
 }

@@ -115,7 +115,10 @@ const {
    * @param {Omit<EventModel, "id"> | EventModel} formValues - Form data
    * @required
    */
-  onSubmit: (formValues: Omit<EventModel, "id"> | EventModel) => void;
+  onSubmit: (
+    formValues: Omit<EventModel, "id"> | EventModel,
+    image?: File | null
+  ) => void;
 
   /**
    * Available event types
@@ -164,6 +167,7 @@ const toast = useToast(); // Toast notifications for user feedback
  * @type {Ref<{long: number, lat: number} | null>}
  */
 const coordinates = ref<{ long: number; lat: number } | null>(null);
+const image = ref<File | null>(null);
 
 /**
  * Dynamic Social Links Array
@@ -235,8 +239,6 @@ watchEffect(() => {
 const formattedInitialData = computed(() => {
   // Return empty object if no initial data provided
   if (!initialData) return {};
-
-  console.log("🔍 Raw initialData:", initialData);
 
   return {
     ...initialData,
@@ -350,6 +352,79 @@ const removeParticipant = (index: number) => {
 };
 
 /**
+ * File Upload Management Functions
+ *
+ * Functions to handle file selection, validation, and management
+ * for the event image upload functionality.
+ */
+
+/**
+ * Handle File Selection Event
+ *
+ * Called when user selects a file through the FileUpload component.
+ * Validates the file and stores it in the reactive image reference.
+ *
+ * @function onFileSelect
+ * @param {Object} event - FileUpload select event containing selected files
+ * @returns {void}
+ */
+const onFileSelect = (event: { files: File[] }) => {
+  const files = event.files;
+
+  if (files && files.length > 0) {
+    const selectedFile = files[0];
+
+    // Validate file type (ensure it's an image)
+    if (selectedFile.type.startsWith("image/")) {
+      image.value = selectedFile;
+      console.log("📸 Image file selected:", selectedFile.name);
+    } else {
+      // Show error toast for invalid file type
+      toast.add({
+        severity: "error",
+        summary: t("newEvent.errors.invalidFileType"),
+        detail: t("newEvent.errors.imageRequired"),
+        life: 5000,
+      });
+      console.warn("❌ Invalid file type selected:", selectedFile.type);
+    }
+  }
+};
+
+/**
+ * Handle File Clear Event
+ *
+ * Called when user clears the selected file or uploads a new one.
+ * Resets the image reference to null.
+ *
+ * @function onFileClear
+ * @returns {void}
+ */
+const onFileClear = () => {
+  image.value = null;
+  console.log("🗑️ Image file cleared");
+};
+
+/**
+ * Format File Size for Display
+ *
+ * Converts file size in bytes to a human-readable format.
+ *
+ * @function formatFileSize
+ * @param {number} bytes - File size in bytes
+ * @returns {string} Formatted file size string
+ */
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return "0 Bytes";
+
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
+
+/**
  * Form Submission Handler
  *
  * Handles the form submission process with data validation, sanitization,
@@ -403,7 +478,9 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
     // Include geographic coordinates from address selection
     longitude: coordinates.value?.long ?? 0,
     latitude: coordinates.value?.lat ?? 0,
-  } as unknown as Omit<EventModel, "id"> | EventModel;
+  } as unknown as
+    | (Omit<EventModel, "id"> & { image: File | null })
+    | EventModel;
 
   // Step 4: Preserve ID if editing existing event
   if (initialData) {
@@ -416,7 +493,7 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
   console.log("🎯 Final eventData:", eventData);
 
   // Step 5: Delegate to parent component's submission handler
-  onSubmit(eventData);
+  onSubmit(eventData, image.value);
 
   // Step 6: Reset dynamic arrays to initial state for next use
   socialLinks.value = [""];
@@ -448,6 +525,8 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
     @invalid-submit="
       (errors) => {
         // Show toast notification when form has validation errors
+        console.log(errors);
+
         toast.add({
           life: 3000,
           severity: 'error',
@@ -541,11 +620,6 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
               >{{ t("newEvent.labels.startDate") }} *</label
             >
 
-            <!-- Debug information (remove in production) -->
-            <div class="text-xs text-gray-500 mb-1">
-              Field value: {{ field.value }} ({{ typeof field.value }})
-            </div>
-
             <DatePicker
               id="dateDebut"
               :model-value="field.value"
@@ -582,11 +656,6 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
         <div class="flex flex-col gap-y-2">
           <Field v-slot="{ field, errorMessage }" name="dateFin">
             <label for="dateFin">{{ t("newEvent.labels.endDate") }} *</label>
-
-            <!-- Debug information (remove in production) -->
-            <div class="text-xs text-gray-500 mb-1">
-              Field value: {{ field.value }} ({{ typeof field.value }})
-            </div>
 
             <DatePicker
               id="dateFin"
@@ -891,38 +960,66 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
       Image Upload Section
       
       Provides file upload functionality for event images.
-      Currently configured for basic upload mode.
+      Captures the selected file and stores it in the reactive image reference.
     -->
     <div class="flex flex-col gap-y-2 items-start mt-4">
       <label>{{ t("newEvent.labels.image") }}</label>
       <FileUpload
+        ref="fileUploadRef"
         mode="basic"
         custom-upload
         auto
         choose-icon="pi pi-image"
         severity="secondary"
         class="p-button-primary"
-        :choose-label="t('newEvent.buttons.imageUpload')"
-        @select="() => {}"
+        :choose-label="
+          t(
+            `${
+              initialData && initialData.image
+                ? 'newEvent.buttons.changeImage'
+                : 'newEvent.buttons.uploadImage'
+            }`
+          )
+        "
+        accept="image/*"
+        :max-file-size="5000000"
+        @select="onFileSelect"
+        @clear="onFileClear"
       />
-    </div>
 
-    <!-- 
+      <!-- Display selected file information -->
+      <div v-if="image" class="text-sm text-gray-600 mt-2">
+        <p>{{ t("newEvent.labels.selectedFile") }}: {{ image.name }}</p>
+        <p>
+          {{ t("newEvent.labels.fileSize") }}: {{ formatFileSize(image.size) }}
+        </p>
+      </div>
+
+      <NuxtLink
+        v-if="initialData && initialData.image"
+        class="text-sm text-gray-600 mt-2 underline"
+        :to="`${initialData.image}`"
+        target="_blank"
+      >
+        {{ t("newEvent.labels.viewFile") }}
+      </NuxtLink>
+
+      <!-- 
       Form Action Buttons
       
       Contains cancel and submit buttons with proper styling and behavior.
       Submit button shows loading state during form submission.
     -->
-    <div class="flex justify-end gap-4">
-      <!-- Submit button - submits the form with validation -->
-      <Button
-        type="submit"
-        :label="t('newEvent.buttons.create')"
-        :loading="isLoading"
-        :disabled="isLoading"
-      />
-    </div>
-  </Form>
+      <div class="w-full flex justify-end gap-4">
+        <!-- Submit button - submits the form with validation -->
+        <Button
+          type="submit"
+          :label="t(`newEvent.buttons.${initialData ? 'update' : 'create'}`)"
+          :loading="isLoading"
+          :disabled="isLoading"
+        />
+      </div></div
+  ></Form>
 </template>
 
 <!--
