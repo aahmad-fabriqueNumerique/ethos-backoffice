@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getAuth } from "@/server/utils/firebaseAdmin";
 import admin from "firebase-admin";
+import { ADMIN, isValidRole } from "~/server/libs/roles";
 
 export default defineEventHandler(async (event) => {
   const authHeader = getHeader(event, "authorization");
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
   // Check for admin role in the token claims
   // Supports both direct role claim and nested customClaims structure
   const userRole = decoded.role || decoded.customClaims?.role;
-  if (userRole !== "admin") {
+  if (userRole !== ADMIN) {
     throw createError({ statusCode: 403, statusMessage: "Access forbidden" });
   }
 
@@ -43,8 +44,8 @@ export default defineEventHandler(async (event) => {
   );
 
   try {
-    if (role === undefined && username === undefined) {
-      console.log("Invalid toto body:", body);
+    if (!isValidRole(role) || username === undefined || uid === undefined) {
+      console.log("Invalid role or username not provided:", body);
 
       throw createError({
         statusCode: 400,

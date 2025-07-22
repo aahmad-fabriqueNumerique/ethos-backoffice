@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getAuth } from "@/server/utils/firebaseAdmin";
 import admin from "firebase-admin";
+import { ORGANISATEUR } from "~/server/libs/roles";
 
 export default defineEventHandler(async (event) => {
   const authHeader = getHeader(event, "authorization");
@@ -35,6 +36,13 @@ export default defineEventHandler(async (event) => {
       uids: string[];
       role: string;
     };
+
+    if (role !== ORGANISATEUR)
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Invalid role",
+      });
+
     for (const uid of uids) {
       await admin.auth().setCustomUserClaims(uid, { role });
       // Delete the corresponding document from waitingRoom collection
