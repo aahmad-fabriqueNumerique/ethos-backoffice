@@ -88,7 +88,7 @@ type NewEventReturn = {
   /** Reactive source URL for image preview */
   src: Ref<string | null>;
   /** Function to update an existing event */
-  onUpdate: (formValues: EventModel) => void;
+  onUpdate: (formValues: EventModel, image?: File | null) => void;
   /** Function to retrieve event details by ID */
   getEventDetails: (eventId: string) => Promise<EventUIModel | null>;
 };
@@ -391,10 +391,13 @@ export const useNewEvent = (): NewEventReturn => {
    * await onUpdate(eventData);
    * ```
    */
-  const onUpdate = async (formValues: Omit<EventModel, "id"> | EventModel) => {
+  const onUpdate = async (
+    formValues: Omit<EventModel, "id"> | EventModel,
+    image?: File | null
+  ) => {
     // Set loading state for UI feedback
     isLoading.value = true;
-    console.log("hgello toto");
+    console.log("🔄 Starting event update process");
 
     // Sanitize form data before storing
     const values = await sanitizeFirestoreData(
@@ -416,14 +419,69 @@ export const useNewEvent = (): NewEventReturn => {
       }
 
       console.log("🔄 Updating event with ID:", values.id);
-      console.log("📝 Update data:", values);
 
-      // Step 3: Update event document in Firestore
+      // Step 3: Get current event data to preserve existing values
       const db = getFirestore();
       const eventRef = doc(db, "events", values.id as string);
+      const currentEventDoc = await getDoc(eventRef);
 
-      // Remove ID from update data (Firestore doesn't allow updating document ID)
+      if (!currentEventDoc.exists()) {
+        console.error("❌ Event not found with ID:", values.id);
+        return;
+      }
+
+      const currentEventData = currentEventDoc.data();
+      console.log("📄 Current event data:", currentEventData);
+
+      // Step 4: Handle image upload if provided
+      if (image) {
+        const downloadUrl = await uploadImage(image, values.id as string);
+        console.log("📸 Image uploaded successfully for event:", values.id);
+        values.image = downloadUrl;
+      }
+
+      // Step 5: Prepare update data preserving existing coordinates
       const { id, ...updateData } = values;
+
+      // Preserve existing latitude and longitude if not provided or if they are 0
+      if (!updateData.latitude || updateData.latitude === 0) {
+        if (currentEventData.latitude && currentEventData.latitude !== 0) {
+          updateData.latitude = currentEventData.latitude;
+          console.log(
+            "🗺️ Preserving existing latitude:",
+            currentEventData.latitude
+          );
+        } else {
+          // Remove latitude field to avoid storing 0
+          delete updateData.latitude;
+        }
+      }
+
+      if (!updateData.longitude || updateData.longitude === 0) {
+        if (currentEventData.longitude && currentEventData.longitude !== 0) {
+          updateData.longitude = currentEventData.longitude;
+          console.log(
+            "🗺️ Preserving existing longitude:",
+            currentEventData.longitude
+          );
+        } else {
+          // Remove longitude field to avoid storing 0
+          delete updateData.longitude;
+        }
+      }
+
+      // Preserve existing image URL if no new image is provided
+      if (!image && !values.image && currentEventData.image) {
+        updateData.image = currentEventData.image;
+        console.log(
+          "🖼️ Preserving existing image URL:",
+          currentEventData.image
+        );
+      }
+
+      console.log("📝 Final update data:", updateData);
+
+      // Step 6: Update event document in Firestore
       await updateDoc(eventRef, updateData as { [x: string]: any });
 
       console.log("✅ Event updated successfully");
