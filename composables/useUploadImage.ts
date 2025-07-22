@@ -23,6 +23,7 @@ import {
   ref as storageRef,
   uploadBytes,
   getDownloadURL,
+  deleteObject,
 } from "firebase/storage";
 
 export const useUploadImage = () => {
@@ -59,6 +60,38 @@ export const useUploadImage = () => {
       "for event ID:",
       eventId
     );
+
+    // Step 0: Check and delete existing images for this event
+    // Since we don't know the exact extension, we need to check all possible extensions
+    const storage = getStorage();
+    const possibleExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
+
+    console.log("🔍 Checking for existing images...");
+
+    for (const ext of possibleExtensions) {
+      try {
+        const oldImageRef = storageRef(
+          storage,
+          `images/events/${eventId}.${ext}`
+        );
+        const oldImageURL = await getDownloadURL(oldImageRef);
+
+        if (oldImageURL) {
+          console.log(
+            `🗑️ Found existing image with .${ext} extension, deleting:`,
+            oldImageURL
+          );
+          await deleteObject(oldImageRef);
+          console.log(`✅ Deleted old image: ${eventId}.${ext}`);
+          break; // Only one image should exist per event, so we can break after finding one
+        }
+      } catch {
+        // Image with this extension doesn't exist, continue to next extension
+        console.log(
+          `📋 No existing image found with .${ext} extension for event ${eventId}`
+        );
+      }
+    }
 
     // Step 1: File validation
     const isTypeOk = file.type.startsWith("image/");

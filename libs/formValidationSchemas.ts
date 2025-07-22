@@ -412,31 +412,70 @@ export const eventFormSchema = z.object({
     .email({ message: "invalid_email" }),
 
   /**
-   * Event image URL field (optional)
+   * Event image field (optional)
    *
    * Optional promotional image for the event.
-   * Must be a valid HTTPS/HTTP URL pointing to a supported image format.
+   * Accepts either a valid URL or a filename for uploaded images.
    *
-   * Supported Formats:
+   * Supported Input Types:
+   * 1. Full URLs: Must be HTTP/HTTPS with valid image extensions
+   * 2. Filenames: Simple filenames with supported extensions (for uploaded files)
+   *
+   * Supported Image Formats:
    * - PNG: .png
    * - JPEG: .jpg, .jpeg
    * - GIF: .gif
    * - WebP: .webp
    *
+   * URL Examples:
+   * - https://example.com/image.jpg
+   * - http://cdn.site.com/photos/event.png
+   *
+   * Filename Examples:
+   * - event-123_1674567890123.jpg
+   * - uploaded-image.png
+   * - my-photo.webp
+   *
    * Security Notes:
-   * - Only allows HTTP/HTTPS protocols
-   * - Validates file extension to prevent non-image URLs
-   * - Consider adding file size validation in upload handling
+   * - URLs must use HTTP/HTTPS protocols only
+   * - Filenames are validated for safe characters and extensions
+   * - File size validation should be handled during upload process
    *
    * @field image
    * @type {string}
    * @optional
-   * @validation URL regex ^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))$
+   * @validation Custom refine function for URL or filename validation
    */
   image: z
     .string()
-    .url({ message: "invalid_image_url" })
+    .refine(
+      (value) => {
+        // Empty string is allowed (optional field)
+        if (!value || value.trim() === "") {
+          return true;
+        }
 
+        // Check if it's a valid URL (starts with http:// or https://)
+        if (value.startsWith("http://") || value.startsWith("https://")) {
+          try {
+            const url = new URL(value);
+            // Validate that the URL ends with a supported image extension
+            return /\.(png|jpg|jpeg|gif|webp)$/i.test(url.pathname);
+          } catch {
+            return false; // Invalid URL format
+          }
+        }
+
+        // If not a URL, validate as filename
+        // Allow alphanumeric characters, dots, hyphens, underscores, and spaces
+        // Must end with supported image extension
+        return /^[a-zA-Z0-9.\-_\s]+\.(png|jpg|jpeg|gif|webp)$/i.test(value);
+      },
+      {
+        message: "invalid_image_format",
+        path: ["image"], // Ensure error is associated with the image field
+      }
+    )
     .optional(),
 
   /**
