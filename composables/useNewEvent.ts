@@ -53,11 +53,10 @@ import { onMounted, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 import { getAuth, type User } from "firebase/auth";
 import {
-  addDoc,
-  collection,
   doc,
   getDoc,
   getFirestore,
+  setDoc,
   type Timestamp,
   updateDoc,
 } from "firebase/firestore";
@@ -77,7 +76,7 @@ type NewEventReturn = {
   /** Zod validation schema for event forms */
   newEventFormSchema: ReturnType<typeof toTypedSchema>;
   /** Function to create a new event */
-  onSubmit: (formValues: Omit<EventModel, "id">) => void;
+  onSubmit: (formValues: Omit<EventModel, "id">, image?: File | null) => void;
   /** Reactive array of available event types */
   eventTypes: Ref<SelectType[]>;
   /** Reactive array of available countries */
@@ -107,6 +106,8 @@ export const useNewEvent = (): NewEventReturn => {
   const { showToast } = useNotifsToasts(); // Toast notifications for user feedback
   const router = useRouter(); // Vue Router for navigation
   const useData = useDataStore(); // Data store for static data (types, countries)
+
+  const { uploadImage } = useUploadImage(); // Image upload composable
 
   /**
    * Reactive loading state indicator
@@ -282,9 +283,16 @@ export const useNewEvent = (): NewEventReturn => {
    * await onSubmit(eventData);
    * ```
    */
-  const onSubmit = async (formValues: Omit<EventModel, "id">) => {
+  const onSubmit = async (
+    formValues: Omit<EventModel, "id">,
+    image?: File | null
+  ) => {
     // Set loading state for UI feedback
     isLoading.value = true;
+
+    const eventId = crypto.randomUUID();
+
+    console.log("Form submitted with values:", formValues);
 
     // Sanitize form data before storing
     const values = await sanitizeFirestoreData(
@@ -301,12 +309,17 @@ export const useNewEvent = (): NewEventReturn => {
 
       console.log("🎯 Creating new event with sanitized data:", values);
 
+      let downloadUrl = "";
+
+      if (image) {
+        downloadUrl = await uploadImage(image, eventId);
+        console.log("📸 Image uploaded successfully for event:", eventId);
+      }
+
       // Step 2: Store event in Firestore database
       const db = getFirestore();
-      const eventRef = collection(db, "events");
-      const docRef = await addDoc(eventRef, values);
-
-      console.log("✅ Event created with ID:", docRef.id);
+      const eventData = { ...values, id: eventId, image: downloadUrl };
+      await setDoc(doc(db, "events", eventId), eventData);
 
       // Step 3: Send push notifications to relevant users
       try {
@@ -317,7 +330,7 @@ export const useNewEvent = (): NewEventReturn => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            id: docRef.id, // Use the generated document ID
+            id: eventId, // Use the generated document ID
             titre: values.titre,
             description: values.description,
           }),
@@ -381,6 +394,7 @@ export const useNewEvent = (): NewEventReturn => {
   const onUpdate = async (formValues: Omit<EventModel, "id"> | EventModel) => {
     // Set loading state for UI feedback
     isLoading.value = true;
+    console.log("hgello toto");
 
     // Sanitize form data before storing
     const values = await sanitizeFirestoreData(

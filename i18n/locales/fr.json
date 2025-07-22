@@ -311,10 +311,12 @@
 
     "buttons": {
       "create": "Créer un événement",
+      "update": "Mettre à jour l'événement",
       "cancel": "Annuler",
       "addParticipant": "Ajouter un participant",
       "addSocialNetwork": "Ajouter un réseau social",
-      "imageUpload": "Choisir une image"
+      "uploadImage": "Choisir une image",
+      "changeImage": "Changer l'image"
     },
 
     "labels": {
@@ -332,7 +334,10 @@
       "email": "Email",
       "socialNetworks": "Réseaux sociaux",
       "participants": "Participants",
-      "image": "Affiche de l'événement (facultatif)"
+      "image": "Affiche de l'événement (facultatif)",
+      "selectedFile": "Fichier sélectionné",
+      "fileSize": "Taille du fichier",
+      "viewFile": "Voir l'image sélectionnée"
     },
     "placeholders": {
       "title": "Entrez le nom de l'événement",
