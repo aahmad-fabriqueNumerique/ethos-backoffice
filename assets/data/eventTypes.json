@@ -1,7 +1,8 @@
 [
-  { "nom": "concert" },
+  { "nom": "live_concert" },
   { "nom": "festival" },
-  { "nom": "spectacle" },
-  { "nom": "atelier" },
-  { "nom": "autre" }
+  { "nom": "show" },
+  { "nom": "workshop" },
+  { "nom": "other" },
+  { "nom": "sponsor" }
 ]
