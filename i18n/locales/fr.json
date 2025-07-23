@@ -4,8 +4,12 @@
   },
   "data": {
     "eventTypes": {
-      "live_concert": "Concert en direct",
-      "festival": "Festival"
+      "live_concert": "Concert",
+      "festival": "Festival",
+      "show": "Spectacle",
+      "workshop": "Atelier",
+      "other": "Autre",
+      "sponsor": "Sponsor"
     },
     "countries": {
       "fr": "France",
