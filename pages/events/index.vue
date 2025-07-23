@@ -99,6 +99,23 @@ const onConfirm = async (eventId: string) => {
 };
 
 /**
+ * Handles mass cleanup of old events
+ * After successful cleanup, reloads the events list to show updated data
+ */
+const handleCleanEvents = async () => {
+  console.log("🧹 Starting mass cleanup...");
+  const result = await cleanEvents();
+
+  if (result?.success) {
+    console.log(`🎉 Mass cleanup successful: ${result.deleted} events deleted`);
+    // Reload the list to show the updated data
+    await loadInitial();
+  } else {
+    console.log("❌ Mass cleanup failed or was cancelled");
+  }
+};
+
+/**
  * Computed property that formats dates WITHOUT modifying original data
  * This preserves the original Timestamp objects for caching
  */
@@ -253,7 +270,7 @@ onMounted(async () => {
         variant="outlined"
         severity="warn"
         icon="pi pi-trash"
-        @click="cleanEvents"
+        @click="handleCleanEvents"
       />
     </div>
     <EventDialogDelete
