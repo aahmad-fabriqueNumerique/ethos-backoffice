@@ -43,7 +43,7 @@ interface UseCleanEventsReturn {
   /** Reactive loading state indicator */
   loading: Ref<boolean>;
   /** Function to perform bulk cleanup of old events */
-  cleanEvents: () => Promise<void>;
+  cleanEvents: () => Promise<{ success: boolean; deleted: number } | null>;
   /** Function to delete a single event by ID */
   deleteOneEvent: (eventId: string) => Promise<{ success: boolean }>;
   /** Reactive visibility state for confirmation dialogs */
@@ -107,7 +107,7 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
    *
    * @async
    * @function cleanEvents
-   * @returns {Promise<void>} Resolves when cleanup operation completes
+   * @returns {Promise<{ success: boolean; deleted: number } | void>} Cleanup result or void on error
    * @throws {Error} When authentication fails or server encounters errors
    *
    * @example
@@ -117,15 +117,20 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
    * // Button click handler
    * const handleCleanup = async () => {
    *   try {
-   *     await cleanEvents();
-   *     console.log('Cleanup completed successfully');
+   *     const result = await cleanEvents();
+   *     if (result?.success) {
+   *       console.log(`Cleanup completed successfully: ${result.deleted} events deleted`);
+   *     }
    *   } catch (error) {
    *     console.error('Cleanup failed:', error);
    *   }
    * };
    * ```
    */
-  const cleanEvents = async (): Promise<void> => {
+  const cleanEvents = async (): Promise<{
+    success: boolean;
+    deleted: number;
+  } | null> => {
     // Initialize loading state for UI feedback
     loading.value = true;
 
@@ -137,7 +142,7 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
       // Guard clause: Ensure user is authenticated
       if (!user) {
         console.error("❌ No authenticated user found - cleanup aborted");
-        return;
+        return null;
       }
 
       console.log("🔐 User authenticated, proceeding with cleanup");
@@ -152,6 +157,7 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      clearAllCache();
       console.log("✅ Cleanup response received:", response);
 
       // Step 4: Display success notification with cleanup results
@@ -163,6 +169,9 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
       });
 
       console.log(`🎉 Successfully cleaned up ${response.deleted} events`);
+
+      // Return success result for caller to handle
+      return { success: true, deleted: response.deleted };
     } catch (error: any) {
       // Step 5: Handle and log errors appropriately
       console.error("❌ Error during events cleanup:", error);
@@ -175,11 +184,8 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
         life: 5000, // Display for 5 seconds
       });
 
-      // Re-throw standardized error for potential upstream handling
-      throw createError({
-        statusCode: 500,
-        statusMessage: "Server error while cleaning events",
-      });
+      // Return null to indicate failure
+      return null;
     } finally {
       // Step 6: Always reset loading state, regardless of operation outcome
       loading.value = false;

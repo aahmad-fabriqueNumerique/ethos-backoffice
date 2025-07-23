@@ -17,6 +17,7 @@
 // Import Firebase Admin SDK modules
 import { initializeApp, cert, getApps, getApp } from "firebase-admin/app";
 import { getAuth as _getAuth } from "firebase-admin/auth";
+import { getStorage as _getStorage } from "firebase-admin/storage";
 
 /**
  * Service account configuration object created from environment variables
@@ -32,12 +33,15 @@ const serviceAccount = {
  * Firebase Admin App instance
  *
  * Implements the singleton pattern to ensure only one instance is created:
- * - If no apps exist, initializes a new app with service account credentials
+ * - If no apps exist, initializes a new app with service account credentials and storage bucket
  * - If an app already exists, returns the existing app instance
  */
 const firebaseAdminApp =
   getApps().length === 0
-    ? initializeApp({ credential: cert(serviceAccount) })
+    ? initializeApp({
+        credential: cert(serviceAccount),
+        storageBucket: process.env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      })
     : getApp();
 
 /**
@@ -57,4 +61,32 @@ const firebaseAdminApp =
  * const userRecord = await auth.getUser(uid);
  */
 export const getAuth = () => _getAuth(firebaseAdminApp);
+
+/**
+ * Returns the Firebase Storage Admin instance
+ *
+ * This function provides access to Firebase Storage admin services for server-side
+ * operations like file deletion, metadata management, and bucket operations.
+ *
+ * @returns The Firebase Storage Admin instance associated with our Firebase Admin app
+ *
+ * @example
+ * // Import the getStorage function
+ * import { getStorage } from '@/server/utils/firebaseAdmin';
+ *
+ * // Use it to access Storage Admin functionality
+ * const storage = getStorage();
+ * const bucket = storage.bucket();
+ *
+ * // Delete a file
+ * await bucket.file('images/events/example.jpg').delete();
+ *
+ * // Check if file exists
+ * const [exists] = await bucket.file('images/events/example.jpg').exists();
+ *
+ * // Get file metadata
+ * const [metadata] = await bucket.file('images/events/example.jpg').getMetadata();
+ */
+export const getStorage = () => _getStorage(firebaseAdminApp);
+
 export const firebaseApp = firebaseAdminApp;
