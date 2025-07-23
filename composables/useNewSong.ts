@@ -58,11 +58,13 @@ export const useNewSong = () => {
         .string({ required_error: "no_title" })
         .regex(regexOptionalGeneric, { message: "invalid_title" }),
       auteur: z
-        .string({ required_error: "no_author" })
-        .regex(regexOptionalGeneric, { message: "invalid_author" }),
+        .string()
+        .regex(regexOptionalGeneric, { message: "invalid_author" })
+        .optional(),
       compositeur: z
-        .string({ required_error: "no_composer" })
-        .regex(regexOptionalGeneric, { message: "invalid_composer" }),
+        .string()
+        .regex(regexOptionalGeneric, { message: "invalid_composer" })
+        .optional(),
       paroles: z
         .string({ required_error: "no_lyrics" })
         .regex(regexOptionalGeneric, { message: "invalid_lyrics" }),
