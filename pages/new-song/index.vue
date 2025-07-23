@@ -21,6 +21,7 @@ import {
   type SubmissionHandler,
 } from "vee-validate";
 import { useI18n } from "vue-i18n";
+import DialogAddNewEntry from "~/components/DialogAddNewEntry.vue";
 
 definePageMeta({
   layout: "home",
@@ -97,7 +98,7 @@ const handleCancel = () => {
   router.replace({ name: "chants" }); // Navigate back to songs list
 };
 
-const showDialog = ref(false);
+const newDataType = ref<"country" | "region" | null>(null); // Type of data to add in the dialog
 </script>
 
 <template>
@@ -201,7 +202,7 @@ const showDialog = ref(false);
               v-tooltip.bottom="t('newSong.dialog.tooltip')"
               type="button"
               icon="pi pi-plus"
-              @click="showDialog = !showDialog"
+              @click="newDataType = 'country'"
             />
           </SelectWithTranslation>
         </span>
@@ -494,6 +495,11 @@ const showDialog = ref(false);
         />
       </div>
     </Form>
-    <DialogAddCountry :visible="showDialog" @set-visible="showDialog = false" />
+    <DialogAddNewEntry
+      v-if="!!newDataType"
+      :type="newDataType!"
+      :visible="!!newDataType"
+      @set-visible="newDataType = null"
+    />
   </main>
 </template>

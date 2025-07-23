@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { regexGeneric } from "~/libs/regex";
+
 /**
  * Add Country Dialog Component
  *
@@ -21,26 +23,37 @@
  */
 
 const emit = defineEmits<{
-  (e: "set-visible"): void;
+  (e: "set-visible", value: "country" | "region" | null): void;
 }>();
 
 // Initialize internationalization helper for translations
 const { t } = useI18n();
 const store = useDataStore();
 
-const { visible } = defineProps<{
+const { visible, type } = defineProps<{
   visible: boolean;
+  type: "country" | "region";
 }>();
 
-const country = ref("");
+const data = ref("");
+const error = ref<string | null>(null); // Reactive error state
 
-const addCountry = () => {
-  if (country.value.trim() === "") {
+const addData = () => {
+  if (data.value.trim() === "" || !regexGeneric.test(data.value)) {
+    error.value = t("newData.dialog.error"); // Set error message if input is invalid
+    // Prevent adding empty or invalid country names) {
     return;
   }
-  store.addCountry({ nom: country.value });
-  country.value = ""; // Reset input after adding
-  emit("set-visible"); // Close dialog
+  if (type === "country") {
+    store.addCountry({ nom: data.value.trim() });
+  } else {
+    store.addRegion({
+      nom: data.value.trim(),
+      region_geographique_libelle: data.value.trim(),
+    });
+  }
+  data.value = ""; // Reset input after adding
+  emit("set-visible", null); // Close dialog
 };
 </script>
 
@@ -81,11 +94,29 @@ const addCountry = () => {
           - Placeholder text from translations
         -->
         <InputText
-          id="pays"
-          v-model="country"
+          id="data"
+          v-model="data"
           :aria-label="t('newSong.dialog.placeholder')"
           fluid
           :placeholder="t('newSong.dialog.placeholder')"
+        />
+        <!-- 
+          Error message display
+          - Conditionally rendered based on error state
+          - Uses translation for error message
+          - Styled to match design system
+        -->
+        <span v-if="error" class="text-red-500 text-xs mt-1">{{ error }}</span>
+        <!-- 
+          Clear error message when input changes
+          - Resets error state to null
+          - Ensures user feedback is immediate
+        -->
+        <InputText
+          v-model="data"
+          class="hidden"
+          aria-hidden="true"
+          @input="error = null"
         />
       </div>
 
@@ -107,7 +138,7 @@ const addCountry = () => {
           :label="t('newSong.dialog.cancel')"
           variant="text"
           severity="secondary"
-          @click="emit('set-visible')"
+          @click="emit('set-visible', null)"
         />
 
         <!-- 
@@ -121,7 +152,7 @@ const addCountry = () => {
           type="button"
           :label="t('newSong.dialog.save')"
           severity="warn"
-          @click="addCountry"
+          @click="addData"
         />
       </div>
     </Dialog>

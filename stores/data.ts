@@ -207,9 +207,28 @@ export const useDataStore = defineStore("data", () => {
     console.log(`Added new country: ${country.nom}`);
   };
 
+  const addRegion = (region: Omit<Region, "id">) => {
+    const newRegion: Region = {
+      id: jsonData.value.regions!.length,
+      nom: region.nom,
+      region_geographique_libelle: region.region_geographique_libelle,
+    };
+
+    // Add to raw JSON data
+    jsonData.value.regions!.push(newRegion);
+
+    // Add to processed cache if it exists
+    if (data.value.regions) {
+      data.value.regions.push(newRegion);
+    }
+
+    console.log(`Added new region: ${region.nom}`);
+  };
+
   // Return the public API of the store
   return {
     addCountry, // Function to add new countries
+    addRegion, // Function to add new regions
     getData, // Function to retrieve data with caching
     resetData, // Function to reset data cache
   };
