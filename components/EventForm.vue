@@ -572,7 +572,7 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
           <SelectWithTranslation
             :options="eventTypes"
             name="type"
-            :label="t('newEvent.labels.type')"
+            :label="t('newEvent.labels.type') + ' *'"
             :placeholder="t('newEvent.placeholders.type')"
             description="Thème du chant"
             category="newEvent"
@@ -801,7 +801,7 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
           <SelectWithTranslation
             :options="countries"
             name="pays"
-            :label="t('newEvent.labels.country')"
+            :label="t('newEvent.labels.country') + ' *'"
             :placeholder="t('newEvent.placeholders.country')"
             description="pays d'origine"
             category="newEvent"

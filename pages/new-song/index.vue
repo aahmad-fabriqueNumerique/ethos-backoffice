@@ -118,7 +118,7 @@ const showDialog = ref(false);
         <!-- Title field -->
         <span class="flex flex-col gap-y-2">
           <Field v-slot="{ field, errorMessage }" name="titre">
-            <label for="titre">{{ t("newSong.labels.title") }}</label>
+            <label for="titre">{{ t("newSong.labels.title") }} *</label>
             <InputText
               id="titre"
               fluid
@@ -192,7 +192,7 @@ const showDialog = ref(false);
           <SelectWithTranslation
             :options="countries"
             name="pays"
-            :label="t('newSong.labels.country')"
+            :label="t('newSong.labels.country') + ' *'"
             :placeholder="t('newSong.placeholders.country')"
             description="Pays d'origine"
             category="songs"
@@ -211,7 +211,7 @@ const showDialog = ref(false);
           <SelectWithTranslation
             :options="regions"
             name="region"
-            :label="t('newSong.labels.region')"
+            :label="t('newSong.labels.region') + ' *'"
             :placeholder="t('newSong.placeholders.region')"
             description="Région d'origine"
             category="songs"
@@ -223,7 +223,7 @@ const showDialog = ref(false);
           <SelectWithTranslation
             :options="languages"
             name="langue"
-            :label="t('newSong.labels.language')"
+            :label="t('newSong.labels.language') + ' *'"
             :placeholder="t('newSong.placeholders.language')"
             description="langue du chant"
             category="songs"
@@ -340,7 +340,7 @@ const showDialog = ref(false);
         <!-- Lyrics field -->
         <span class="flex flex-col gap-y-2">
           <Field v-slot="{ field, errorMessage }" name="paroles">
-            <label for="paroles">{{ t("newSong.labels.lyrics") }}</label>
+            <label for="paroles">{{ t("newSong.labels.lyrics") }} *</label>
             <Textarea
               id="paroles"
               fluid
