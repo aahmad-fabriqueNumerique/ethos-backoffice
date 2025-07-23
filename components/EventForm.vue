@@ -704,9 +704,10 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
       <div class="flex flex-col gap-y-2">
         <Field v-slot="{ field, errorMessage }" name="adresse">
           <APIAddress
+            :address="initialData?.adresse ?? ''"
             name="adresse"
-            label="Adresse de l'event"
-            placeholder="Commencez à taper une adresse..."
+            :label="t('newEvent.labels.address')"
+            :placeholder="t('newEvent.placeholders.address')"
             @address-selected="
               (address) => {
                 console.log('Selected address:', address);
@@ -736,8 +737,6 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
             id="adresse"
             type="hidden"
             v-bind="field"
-            :placeholder="t('newEvent.placeholders.adresse')"
-            :invalid="!!errorMessage"
             @update:model-value="field.onChange"
           />
           <Message

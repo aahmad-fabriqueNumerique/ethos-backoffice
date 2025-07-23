@@ -31,7 +31,7 @@
   />
 -->
 <script setup lang="ts">
-import { ref, onBeforeUnmount } from "vue";
+import { ref, onBeforeUnmount, watch } from "vue";
 
 /**
  * Address feature structure returned by the French government API
@@ -56,11 +56,18 @@ const {
   name: _name, // Field identifier (prefixed with _ to avoid unused variable warning)
   placeholder, // Input placeholder text
   label, // Field label
-} = defineProps<{
-  name: string;
-  placeholder: string;
-  label: string;
-}>();
+  address = "", // Optional initial address value with default
+} = withDefaults(
+  defineProps<{
+    name: string;
+    address?: string; // Optional initial address value
+    placeholder: string;
+    label: string;
+  }>(),
+  {
+    address: "",
+  }
+);
 
 /**
  * Component events definition
@@ -80,14 +87,27 @@ const emit = defineEmits<{
   (e: "data-changed", data: string): void;
 }>();
 
+const { t } = useI18n(); // Internationalization helper for translations
+
 // Component reactive state
-const selectedAddress = ref<string>(""); // Currently selected/typed address
+const selectedAddress = ref<string>(address || ""); // Initialize with props address value
 const filteredAddresses = ref<AddressFeature[]>([]); // Search results from API
 const loading = ref(false); // Loading state indicator
 
 // Request management references
 let debounceTimeout: NodeJS.Timeout | null = null; // Debounce timeout reference to prevent excessive API calls
 let abortController: AbortController | null = null; // AbortController to cancel ongoing API requests
+
+/**
+ * Watch for changes in the address prop and update selectedAddress accordingly
+ * This ensures the component stays in sync when parent component changes the address value
+ */
+watch(
+  () => address,
+  (newAddress) => {
+    selectedAddress.value = newAddress || "";
+  }
+);
 
 /**
  * Fetches addresses from the French government API
@@ -208,39 +228,44 @@ onBeforeUnmount(() => {
         - @complete: Triggers debounced search
         - @option-select: Handles address selection
       -->
-      <AutoComplete
-        v-model="selectedAddress"
-        name="adresse"
-        :placeholder="placeholder"
-        class="w-full"
-        :loading="loading"
-        fluid
-        option-label="properties.label"
-        :suggestions="filteredAddresses"
-        @complete="searchHandler"
-        @option-select="selectHandler"
-        @change="(e) => emit('data-changed', e.value)"
-      >
-        <!-- Custom option template for better UX -->
-        <template #option="slotProps">
-          <div class="flex flex-col p-2">
-            <!-- Main address label -->
-            <div class="font-medium">
-              {{ slotProps.option.properties.label }}
+      <span class="flex flex-col gap-y-2 w-full">
+        <label for="adresse">{{ t("newEvent.labels.address") }} *</label>
+        <AutoComplete
+          v-model="selectedAddress"
+          name="adresse"
+          :placeholder="placeholder"
+          class="w-full"
+          :loading="loading"
+          fluid
+          option-label="properties.label"
+          :suggestions="filteredAddresses"
+          @complete="searchHandler"
+          @option-select="selectHandler"
+          @change="(e) => emit('data-changed', e.value)"
+        >
+          <!-- Custom option template for better UX -->
+          <template #option="slotProps">
+            <div class="flex flex-col p-2">
+              <!-- Main address label -->
+              <div class="font-medium">
+                {{ slotProps.option.properties.label || address }}
+              </div>
+              <!-- Secondary info: city and postal code -->
+              <div class="text-sm text-surface-500">
+                {{ slotProps.option.properties.city }} -
+                {{ slotProps.option.properties.postcode }}
+              </div>
             </div>
-            <!-- Secondary info: city and postal code -->
-            <div class="text-sm text-surface-500">
-              {{ slotProps.option.properties.city }} -
-              {{ slotProps.option.properties.postcode }}
-            </div>
-          </div>
-        </template>
+          </template>
 
-        <!-- Header for the dropdown -->
-        <template #header>
-          <div class="font-medium px-3 py-2">{{ label || "Addresses" }}</div>
-        </template>
-      </AutoComplete>
+          <!-- Header for the dropdown -->
+          <template #header>
+            <div class="font-medium px-3 py-2">
+              {{ label || "Addresses" }}
+            </div>
+          </template>
+        </AutoComplete></span
+      >
     </div>
   </div>
 </template>
