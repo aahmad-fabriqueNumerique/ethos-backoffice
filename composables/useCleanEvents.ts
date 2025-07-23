@@ -33,6 +33,7 @@
  */
 import { getAuth, type User } from "firebase/auth";
 import { deleteDoc, doc, getFirestore } from "firebase/firestore";
+import { ref as storageRef, deleteObject } from "firebase/storage";
 
 /**
  * Events cleanup composable return type definition
@@ -43,7 +44,7 @@ interface UseCleanEventsReturn {
   /** Reactive loading state indicator */
   loading: Ref<boolean>;
   /** Function to perform bulk cleanup of old events */
-  cleanEvents: () => Promise<void>;
+  cleanEvents: () => Promise<{ success: boolean; deleted: number } | null>;
   /** Function to delete a single event by ID */
   deleteOneEvent: (eventId: string) => Promise<{ success: boolean }>;
   /** Reactive visibility state for confirmation dialogs */
@@ -107,7 +108,7 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
    *
    * @async
    * @function cleanEvents
-   * @returns {Promise<void>} Resolves when cleanup operation completes
+   * @returns {Promise<{ success: boolean; deleted: number } | void>} Cleanup result or void on error
    * @throws {Error} When authentication fails or server encounters errors
    *
    * @example
@@ -117,15 +118,20 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
    * // Button click handler
    * const handleCleanup = async () => {
    *   try {
-   *     await cleanEvents();
-   *     console.log('Cleanup completed successfully');
+   *     const result = await cleanEvents();
+   *     if (result?.success) {
+   *       console.log(`Cleanup completed successfully: ${result.deleted} events deleted`);
+   *     }
    *   } catch (error) {
    *     console.error('Cleanup failed:', error);
    *   }
    * };
    * ```
    */
-  const cleanEvents = async (): Promise<void> => {
+  const cleanEvents = async (): Promise<{
+    success: boolean;
+    deleted: number;
+  } | null> => {
     // Initialize loading state for UI feedback
     loading.value = true;
 
@@ -137,7 +143,7 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
       // Guard clause: Ensure user is authenticated
       if (!user) {
         console.error("❌ No authenticated user found - cleanup aborted");
-        return;
+        return null;
       }
 
       console.log("🔐 User authenticated, proceeding with cleanup");
@@ -152,6 +158,7 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      clearAllCache();
       console.log("✅ Cleanup response received:", response);
 
       // Step 4: Display success notification with cleanup results
@@ -163,6 +170,9 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
       });
 
       console.log(`🎉 Successfully cleaned up ${response.deleted} events`);
+
+      // Return success result for caller to handle
+      return { success: true, deleted: response.deleted };
     } catch (error: any) {
       // Step 5: Handle and log errors appropriately
       console.error("❌ Error during events cleanup:", error);
@@ -175,11 +185,8 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
         life: 5000, // Display for 5 seconds
       });
 
-      // Re-throw standardized error for potential upstream handling
-      throw createError({
-        statusCode: 500,
-        statusMessage: "Server error while cleaning events",
-      });
+      // Return null to indicate failure
+      return null;
     } finally {
       // Step 6: Always reset loading state, regardless of operation outcome
       loading.value = false;
@@ -243,19 +250,47 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
       // Step 2: Create document reference for the target event
       const eventRef = doc(db, "events", eventId);
 
+      // Step 3: Delete the image file associated with the event in Firebase Storage
+      const { $firebaseStorage } = useNuxtApp();
+      const possibleExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
+
+      for (const ext of possibleExtensions) {
+        try {
+          const filePath = `images/events/${eventId}.${ext}`;
+          const fileRef = storageRef($firebaseStorage, filePath);
+
+          // Try to delete the file (Firebase Storage doesn't have an "exists" check on client side)
+          await deleteObject(fileRef);
+          console.log(`✅ Successfully deleted image: ${filePath}`);
+        } catch (error: any) {
+          // If the file doesn't exist, Firebase throws an error with code 'storage/object-not-found'
+          if (error.code === "storage/object-not-found") {
+            console.log(
+              `📋 No image found at path: images/events/${eventId}.${ext}`
+            );
+          } else {
+            console.error(`❌ Error deleting image ${eventId}.${ext}:`, {
+              message: error.message,
+              code: error.code,
+              filePath: `images/events/${eventId}.${ext}`,
+            });
+          }
+        }
+      }
+
       console.log(`🗑️ Initiating deletion for event ID: ${eventId}`);
 
-      // Step 3: Perform the deletion operation
+      // Step 4: Perform the deletion operation
       await deleteDoc(eventRef);
 
       console.log(`✅ Successfully deleted event: ${eventId}`);
 
-      // Step 4: Invalidate cache to ensure data consistency
+      // Step 5: Invalidate cache to ensure data consistency
       // This prevents deleted events from appearing in cached lists
       clearAllCache();
       console.log("🔄 Cache cleared after event deletion");
 
-      // Step 5: Close any open confirmation dialogs
+      // Step 6: Close any open confirmation dialogs
       visible.value = false;
 
       // Step 6: Return success indicator

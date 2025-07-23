@@ -82,7 +82,7 @@ const useLogin = (): LoginReturn => {
 
     try {
       await userStore.authenticate(values); // Attempt authentication through the user store
-      router.replace("/chants"); // Redirect to the songs page after successful auth
+      router.replace("/events"); // Redirect to the songs page after successful auth
     } catch (error) {
       // Error handling could be added here
       console.error("Authentication error:", error);
