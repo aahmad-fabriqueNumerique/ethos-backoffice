@@ -33,6 +33,7 @@
  */
 import { getAuth, type User } from "firebase/auth";
 import { deleteDoc, doc, getFirestore } from "firebase/firestore";
+import { ref as storageRef, deleteObject } from "firebase/storage";
 
 /**
  * Events cleanup composable return type definition
@@ -249,19 +250,47 @@ export const useCleanEvents = (): UseCleanEventsReturn => {
       // Step 2: Create document reference for the target event
       const eventRef = doc(db, "events", eventId);
 
+      // Step 3: Delete the image file associated with the event in Firebase Storage
+      const { $firebaseStorage } = useNuxtApp();
+      const possibleExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
+
+      for (const ext of possibleExtensions) {
+        try {
+          const filePath = `images/events/${eventId}.${ext}`;
+          const fileRef = storageRef($firebaseStorage, filePath);
+
+          // Try to delete the file (Firebase Storage doesn't have an "exists" check on client side)
+          await deleteObject(fileRef);
+          console.log(`✅ Successfully deleted image: ${filePath}`);
+        } catch (error: any) {
+          // If the file doesn't exist, Firebase throws an error with code 'storage/object-not-found'
+          if (error.code === "storage/object-not-found") {
+            console.log(
+              `📋 No image found at path: images/events/${eventId}.${ext}`
+            );
+          } else {
+            console.error(`❌ Error deleting image ${eventId}.${ext}:`, {
+              message: error.message,
+              code: error.code,
+              filePath: `images/events/${eventId}.${ext}`,
+            });
+          }
+        }
+      }
+
       console.log(`🗑️ Initiating deletion for event ID: ${eventId}`);
 
-      // Step 3: Perform the deletion operation
+      // Step 4: Perform the deletion operation
       await deleteDoc(eventRef);
 
       console.log(`✅ Successfully deleted event: ${eventId}`);
 
-      // Step 4: Invalidate cache to ensure data consistency
+      // Step 5: Invalidate cache to ensure data consistency
       // This prevents deleted events from appearing in cached lists
       clearAllCache();
       console.log("🔄 Cache cleared after event deletion");
 
-      // Step 5: Close any open confirmation dialogs
+      // Step 6: Close any open confirmation dialogs
       visible.value = false;
 
       // Step 6: Return success indicator
