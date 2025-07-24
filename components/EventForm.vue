@@ -475,9 +475,6 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
     // Add sanitized dynamic arrays
     participants: safeParticipants,
     reseauxSociaux: safeSocialLinks,
-    // Include geographic coordinates from address selection
-    longitude: coordinates.value?.long ?? 0,
-    latitude: coordinates.value?.lat ?? 0,
   } as unknown as
     | (Omit<EventModel, "id"> & { image: File | null })
     | EventModel;
@@ -724,6 +721,8 @@ const newDataType = ref<DataKey | null>(null); // Type of data to add in the dia
                 setFieldValue('adresse', address.street);
                 setFieldValue('ville', address.city);
                 setFieldValue('codePostal', address.postalCode);
+                setFieldValue('longitude', coordinates.long);
+                setFieldValue('latitude', coordinates.lat);
               }
             "
             @data-changed="
@@ -815,6 +814,54 @@ const newDataType = ref<DataKey | null>(null); // Type of data to add in the dia
               @click="newDataType = 'countries'"
           /></SelectWithTranslation>
         </div>
+      </div>
+    </div>
+    <!-- GPS Coordinates Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+      <!-- Longitude Field -->
+      <div class="flex flex-col gap-y-2">
+        <Field v-slot="{ field, errorMessage }" name="longitude">
+          <label for="longitude">{{ t("newEvent.labels.longitude") }} *</label>
+          <InputText
+            id="longitude"
+            type="number"
+            fluid
+            v-bind="field"
+            :placeholder="t('newEvent.placeholders.longitude')"
+            :invalid="!!errorMessage"
+            @update:model-value="field.onChange"
+          />
+          <Message
+            v-if="errorMessage"
+            class="text-xs text-error"
+            severity="error"
+          >
+            {{ t(`newEvent.errors.${errorMessage}`) }}
+          </Message>
+        </Field>
+      </div>
+
+      <!-- Latitude Field -->
+      <div class="flex flex-col gap-y-2">
+        <Field v-slot="{ field, errorMessage }" name="latitude">
+          <label for="latitude">{{ t("newEvent.labels.latitude") }} *</label>
+          <InputText
+            id="latitude"
+            type="number"
+            fluid
+            v-bind="field"
+            :placeholder="t('newEvent.placeholders.latitude')"
+            :invalid="!!errorMessage"
+            @update:model-value="field.onChange"
+          />
+          <Message
+            v-if="errorMessage"
+            class="text-xs text-error"
+            severity="error"
+          >
+            {{ t(`newEvent.errors.${errorMessage}`) }}
+          </Message>
+        </Field>
       </div>
     </div>
 
