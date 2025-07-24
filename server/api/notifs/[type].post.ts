@@ -20,7 +20,7 @@ import { getMessaging } from "firebase-admin/messaging";
 import { translateNotificationType } from "~/server/utils/translateNotifications";
 
 export default defineEventHandler(async (event) => {
-  const types = ["event", "song"];
+  const types = ["event", "song", "news", "dates_update", "new_band"];
 
   try {
     const type = getRouterParam(event, "type");
@@ -72,7 +72,7 @@ export default defineEventHandler(async (event) => {
 
     // Prepare notification description with length limitation
     // FCM has character limits, so we truncate long descriptions
-    let updatedDescription = description || "Aucun description fournie";
+    let updatedDescription = description || "Aucune description fournie";
 
     if (description && description.length > 100) {
       updatedDescription = description.substring(0, 100);

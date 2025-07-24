@@ -46,6 +46,7 @@ import dataThemes from "@/assets/data/themes.json";
 import dataCountries from "@/assets/data/countries.json";
 import dataSongTypes from "@/assets/data/songTypes.json";
 import dataEventTypes from "@/assets/data/eventTypes.json";
+import dataNotifsTypes from "@/assets/data/notifsTypes.json";
 
 /**
  * Base data type definition
@@ -71,7 +72,8 @@ export type DataKey =
   | "themes"
   | "countries"
   | "eventTypes"
-  | "songTypes";
+  | "songTypes"
+  | "notifsTypes";
 
 /**
  * Pinia Data Store Definition
@@ -98,6 +100,7 @@ export const useDataStore = defineStore("data", () => {
     countries: SelectType[] | null;
     eventTypes: SelectType[] | null;
     songTypes: SelectType[] | null;
+    notifsTypes: SelectType[] | null;
   }>({
     regions: null,
     languages: null,
@@ -105,6 +108,7 @@ export const useDataStore = defineStore("data", () => {
     countries: null,
     eventTypes: null,
     songTypes: null,
+    notifsTypes: null,
   });
 
   /**
@@ -123,6 +127,7 @@ export const useDataStore = defineStore("data", () => {
     countries: Omit<SelectType, "id">[] | null;
     eventTypes: Omit<SelectType, "id">[] | null;
     songTypes: Omit<SelectType, "id">[] | null;
+    notifsTypes: Omit<SelectType, "id">[] | null;
   }>({
     regions: null,
     languages: null,
@@ -130,6 +135,7 @@ export const useDataStore = defineStore("data", () => {
     countries: null,
     eventTypes: null,
     songTypes: null,
+    notifsTypes: null,
   });
 
   // Initialize internationalization helpers for data translation and validation
@@ -275,6 +281,7 @@ export const useDataStore = defineStore("data", () => {
       themes: dataThemes as Omit<SelectType, "id">[],
       eventTypes: dataEventTypes as Omit<SelectType, "id">[],
       songTypes: dataSongTypes as Omit<SelectType, "id">[],
+      notifsTypes: dataNotifsTypes as Omit<SelectType, "id">[],
     };
 
     console.log("✅ Static data loaded successfully");
@@ -320,6 +327,7 @@ export const useDataStore = defineStore("data", () => {
     const newItem: SelectType = {
       id: jsonData.value[key]!.length,
       nom: item.nom,
+      slug: key === "notifsTypes" ? item.slug : undefined, // Only add slug for notifsTypes
     };
 
     // Add to raw JSON data for persistence
