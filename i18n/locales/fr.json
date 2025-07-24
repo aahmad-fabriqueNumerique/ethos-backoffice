@@ -188,14 +188,6 @@
       "description": "Entrez une description du chant",
       "url": "Entrez l'URL du chant",
       "musicUrl": "Entrez l'URL de la musique"
-    },
-    "dialog": {
-      "header": "Ajouter un pays",
-      "cancel": "Annuler",
-      "save": "Ajouter",
-      "description": "Ajouter un nouveau pays à la liste le temps de votre session.",
-      "placeholder": "Entrez le nom du pays",
-      "tooltip": "Ajoute provisoirement un pays à la liste des pays disponibles. Il sera supprimé à la fin de votre session."
     }
   },
   "regions": {
@@ -571,6 +563,31 @@
     "fileErrors": {
       "size": "Le fichier doit faire moins de 10 Mo.",
       "type": "Le fichier doit être au format CSV."
+    }
+  },
+  "newData": {
+    "dialog": {
+      "headers": {
+        "countries": "Ajouter un pays",
+        "regions": "Ajouter une région"
+      },
+      "descriptions": {
+        "countries": "Ajouter un nouveau pays à la liste le temps de votre session.",
+        "regions": "Ajouter une nouvelle région à la liste le temps de votre session."
+      },
+      "buttons": { "cancel": "Annuler", "save": "Ajouter" },
+      "labels": {
+        "countries": "Nom du pays",
+        "regions": "Nom de la région"
+      },
+      "placeholders": {
+        "countries": "Entrez le nom du pays",
+        "regions": "Entrez le nom de la région"
+      },
+      "tooltips": {
+        "countries": "Ajoute provisoirement un pays à la liste des pays disponibles. Il sera supprimé à la fin de votre session.",
+        "regions": "Ajoute provisoirement une région à la liste des régions disponibles. Elle sera supprimée à la fin de votre session."
+      }
     }
   }
 }

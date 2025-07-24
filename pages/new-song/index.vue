@@ -21,6 +21,7 @@ import {
   type SubmissionHandler,
 } from "vee-validate";
 import { useI18n } from "vue-i18n";
+import DialogAddNewEntry from "~/components/DialogAddNewEntry.vue";
 
 definePageMeta({
   layout: "home",
@@ -97,7 +98,7 @@ const handleCancel = () => {
   router.replace({ name: "chants" }); // Navigate back to songs list
 };
 
-const showDialog = ref(false);
+const newDataType = ref<DataKey | null>(null); // Type of data to add in the dialog
 </script>
 
 <template>
@@ -198,10 +199,10 @@ const showDialog = ref(false);
             category="songs"
           >
             <Button
-              v-tooltip.bottom="t('newSong.dialog.tooltip')"
+              v-tooltip.bottom="t('newData.dialog.tooltips.countries')"
               type="button"
               icon="pi pi-plus"
-              @click="showDialog = !showDialog"
+              @click="newDataType = 'countries'"
             />
           </SelectWithTranslation>
         </span>
@@ -215,7 +216,13 @@ const showDialog = ref(false);
             :placeholder="t('newSong.placeholders.region')"
             description="Région d'origine"
             category="songs"
-          />
+          >
+            <Button
+              v-tooltip.bottom="t('newData.dialog.tooltips.regions')"
+              type="button"
+              icon="pi pi-plus"
+              @click="newDataType = 'regions'"
+          /></SelectWithTranslation>
         </span>
 
         <!-- Language field -->
@@ -494,6 +501,11 @@ const showDialog = ref(false);
         />
       </div>
     </Form>
-    <DialogAddCountry :visible="showDialog" @set-visible="showDialog = false" />
+    <DialogAddNewEntry
+      v-if="!!newDataType"
+      :type="newDataType!"
+      :visible="!!newDataType"
+      @set-visible="newDataType = null"
+    />
   </main>
 </template>
