@@ -14,7 +14,7 @@
  * @returns Object containing operation status and count of deleted documents
  */
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
-import { firebaseApp } from "~/server/utils/firebaseAdmin";
+import { firebaseApp, getStorage, getAuth } from "~/server/utils/firebaseAdmin";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -65,7 +65,43 @@ export default defineEventHandler(async (event) => {
       if (snapshot.empty) break;
       console.log(`Found ${snapshot.size} documents to delete...`);
 
-      // Create a batch for bulk deletion
+      // First, collect all event IDs that will be deleted
+      const eventIds = snapshot.docs.map((doc) => doc.id);
+
+      // Delete images associated with the events from Firebase Storage BEFORE deleting documents
+      const storage = getStorage();
+      const bucket = storage.bucket();
+      const possibleExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
+
+      for (const eventId of eventIds) {
+        console.log(`🔍 Checking images for event ${eventId}...`);
+
+        for (const ext of possibleExtensions) {
+          try {
+            const filePath = `images/events/${eventId}.${ext}`;
+            const file = bucket.file(filePath);
+
+            // Check if file exists before attempting deletion
+            const [exists] = await file.exists();
+
+            if (exists) {
+              await file.delete();
+              console.log(`✅ Successfully deleted image: ${filePath}`);
+            } else {
+              console.log(`📋 No image found at path: ${filePath}`);
+            }
+          } catch (error: any) {
+            console.error(`❌ Error processing ${eventId}.${ext}:`, {
+              message: error.message,
+              code: error.code,
+              statusCode: error.statusCode,
+              filePath: `images/events/${eventId}.${ext}`,
+            });
+          }
+        }
+      }
+
+      // Now delete the Firestore documents after images have been cleaned up
       const batch = db.batch();
       snapshot.docs.forEach((doc) => batch.delete(doc.ref));
       await batch.commit();

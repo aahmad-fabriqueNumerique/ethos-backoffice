@@ -49,15 +49,12 @@ import type EventModel from "@/models/EventModel";
 import type SelectType from "@/models/SelectType";
 import { useDataStore } from "@/stores/data";
 import { toTypedSchema } from "@vee-validate/zod";
-import { onMounted, ref, type Ref } from "vue";
-import { useRouter } from "vue-router";
 import { getAuth, type User } from "firebase/auth";
 import {
-  addDoc,
-  collection,
   doc,
   getDoc,
   getFirestore,
+  setDoc,
   type Timestamp,
   updateDoc,
 } from "firebase/firestore";
@@ -77,7 +74,7 @@ type NewEventReturn = {
   /** Zod validation schema for event forms */
   newEventFormSchema: ReturnType<typeof toTypedSchema>;
   /** Function to create a new event */
-  onSubmit: (formValues: Omit<EventModel, "id">) => void;
+  onSubmit: (formValues: Omit<EventModel, "id">, image?: File | null) => void;
   /** Reactive array of available event types */
   eventTypes: Ref<SelectType[]>;
   /** Reactive array of available countries */
@@ -89,7 +86,7 @@ type NewEventReturn = {
   /** Reactive source URL for image preview */
   src: Ref<string | null>;
   /** Function to update an existing event */
-  onUpdate: (formValues: EventModel) => void;
+  onUpdate: (formValues: EventModel, image?: File | null) => void;
   /** Function to retrieve event details by ID */
   getEventDetails: (eventId: string) => Promise<EventUIModel | null>;
 };
@@ -107,6 +104,8 @@ export const useNewEvent = (): NewEventReturn => {
   const { showToast } = useNotifsToasts(); // Toast notifications for user feedback
   const router = useRouter(); // Vue Router for navigation
   const useData = useDataStore(); // Data store for static data (types, countries)
+
+  const { uploadImage } = useUploadImage(); // Image upload composable
 
   /**
    * Reactive loading state indicator
@@ -282,9 +281,16 @@ export const useNewEvent = (): NewEventReturn => {
    * await onSubmit(eventData);
    * ```
    */
-  const onSubmit = async (formValues: Omit<EventModel, "id">) => {
+  const onSubmit = async (
+    formValues: Omit<EventModel, "id">,
+    image?: File | null
+  ) => {
     // Set loading state for UI feedback
     isLoading.value = true;
+
+    const eventId = crypto.randomUUID();
+
+    console.log("Form submitted with values:", formValues);
 
     // Sanitize form data before storing
     const values = await sanitizeFirestoreData(
@@ -301,12 +307,17 @@ export const useNewEvent = (): NewEventReturn => {
 
       console.log("🎯 Creating new event with sanitized data:", values);
 
+      let downloadUrl = "";
+
+      if (image) {
+        downloadUrl = await uploadImage(image, eventId);
+        console.log("📸 Image uploaded successfully for event:", eventId);
+      }
+
       // Step 2: Store event in Firestore database
       const db = getFirestore();
-      const eventRef = collection(db, "events");
-      const docRef = await addDoc(eventRef, values);
-
-      console.log("✅ Event created with ID:", docRef.id);
+      const eventData = { ...values, id: eventId, image: downloadUrl };
+      await setDoc(doc(db, "events", eventId), eventData);
 
       // Step 3: Send push notifications to relevant users
       try {
@@ -317,7 +328,7 @@ export const useNewEvent = (): NewEventReturn => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            id: docRef.id, // Use the generated document ID
+            id: eventId, // Use the generated document ID
             titre: values.titre,
             description: values.description,
           }),
@@ -378,9 +389,13 @@ export const useNewEvent = (): NewEventReturn => {
    * await onUpdate(eventData);
    * ```
    */
-  const onUpdate = async (formValues: Omit<EventModel, "id"> | EventModel) => {
+  const onUpdate = async (
+    formValues: Omit<EventModel, "id"> | EventModel,
+    image?: File | null
+  ) => {
     // Set loading state for UI feedback
     isLoading.value = true;
+    console.log("🔄 Starting event update process");
 
     // Sanitize form data before storing
     const values = await sanitizeFirestoreData(
@@ -402,14 +417,69 @@ export const useNewEvent = (): NewEventReturn => {
       }
 
       console.log("🔄 Updating event with ID:", values.id);
-      console.log("📝 Update data:", values);
 
-      // Step 3: Update event document in Firestore
+      // Step 3: Get current event data to preserve existing values
       const db = getFirestore();
       const eventRef = doc(db, "events", values.id as string);
+      const currentEventDoc = await getDoc(eventRef);
 
-      // Remove ID from update data (Firestore doesn't allow updating document ID)
+      if (!currentEventDoc.exists()) {
+        console.error("❌ Event not found with ID:", values.id);
+        return;
+      }
+
+      const currentEventData = currentEventDoc.data();
+      console.log("📄 Current event data:", currentEventData);
+
+      // Step 4: Handle image upload if provided
+      if (image) {
+        const downloadUrl = await uploadImage(image, values.id as string);
+        console.log("📸 Image uploaded successfully for event:", values.id);
+        values.image = downloadUrl;
+      }
+
+      // Step 5: Prepare update data preserving existing coordinates
       const { id, ...updateData } = values;
+
+      // Preserve existing latitude and longitude if not provided or if they are 0
+      if (!updateData.latitude || updateData.latitude === 0) {
+        if (currentEventData.latitude && currentEventData.latitude !== 0) {
+          updateData.latitude = currentEventData.latitude;
+          console.log(
+            "🗺️ Preserving existing latitude:",
+            currentEventData.latitude
+          );
+        } else {
+          // Remove latitude field to avoid storing 0
+          delete updateData.latitude;
+        }
+      }
+
+      if (!updateData.longitude || updateData.longitude === 0) {
+        if (currentEventData.longitude && currentEventData.longitude !== 0) {
+          updateData.longitude = currentEventData.longitude;
+          console.log(
+            "🗺️ Preserving existing longitude:",
+            currentEventData.longitude
+          );
+        } else {
+          // Remove longitude field to avoid storing 0
+          delete updateData.longitude;
+        }
+      }
+
+      // Preserve existing image URL if no new image is provided
+      if (!image && !values.image && currentEventData.image) {
+        updateData.image = currentEventData.image;
+        console.log(
+          "🖼️ Preserving existing image URL:",
+          currentEventData.image
+        );
+      }
+
+      console.log("📝 Final update data:", updateData);
+
+      // Step 6: Update event document in Firestore
       await updateDoc(eventRef, updateData as { [x: string]: any });
 
       console.log("✅ Event updated successfully");

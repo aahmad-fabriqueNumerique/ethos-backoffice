@@ -232,6 +232,32 @@ export const themeFormSchema = z.object({
  */
 export const eventFormSchema = z.object({
   /**
+   * Event longitude coordinate
+   *
+   * Geographic longitude coordinate for precise event location.
+   * Automatically converts string input to number for form compatibility.
+   *
+   * @field longitude
+   * @type {number}
+   * @required
+   * @validation Numeric conversion with coercion
+   */
+  longitude: z.coerce.number({ required_error: "required_longitude" }),
+
+  /**
+   * Event latitude coordinate
+   *
+   * Geographic latitude coordinate for precise event location.
+   * Automatically converts string input to number for form compatibility.
+   *
+   * @field latitude
+   * @type {number}
+   * @required
+   * @validation Numeric conversion with coercion
+   */
+  latitude: z.coerce.number({ required_error: "required_latitude" }),
+
+  /**
    * Event title field
    *
    * The primary name/title of the event. This is the main identifier
@@ -273,6 +299,7 @@ export const eventFormSchema = z.object({
    * @validation regexGeneric pattern
    */
   type: z
+
     .string({ required_error: "required_type" })
     .regex(regexGeneric, { message: "invalid_type" }),
 
@@ -412,53 +439,119 @@ export const eventFormSchema = z.object({
     .email({ message: "invalid_email" }),
 
   /**
-   * Event image URL field (optional)
+   * Event image field (optional)
    *
    * Optional promotional image for the event.
-   * Must be a valid HTTPS/HTTP URL pointing to a supported image format.
+   * Accepts either a valid URL or a filename for uploaded images.
    *
-   * Supported Formats:
+   * Supported Input Types:
+   * 1. Full URLs: Must be HTTP/HTTPS with valid image extensions
+   * 2. Filenames: Simple filenames with supported extensions (for uploaded files)
+   *
+   * Supported Image Formats:
    * - PNG: .png
    * - JPEG: .jpg, .jpeg
    * - GIF: .gif
    * - WebP: .webp
    *
+   * URL Examples:
+   * - https://example.com/image.jpg
+   * - http://cdn.site.com/photos/event.png
+   *
+   * Filename Examples:
+   * - event-123_1674567890123.jpg
+   * - uploaded-image.png
+   * - my-photo.webp
+   *
    * Security Notes:
-   * - Only allows HTTP/HTTPS protocols
-   * - Validates file extension to prevent non-image URLs
-   * - Consider adding file size validation in upload handling
+   * - URLs must use HTTP/HTTPS protocols only
+   * - Filenames are validated for safe characters and extensions
+   * - File size validation should be handled during upload process
    *
    * @field image
    * @type {string}
    * @optional
-   * @validation URL regex ^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))$
+   * @validation Custom refine function for URL or filename validation
    */
   image: z
-    .string({ required_error: "required_image" })
-    .regex(/^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))$/, {
-      message: "invalid_image_url",
-    })
+    .string()
+    .refine(
+      (value) => {
+        // Empty string is allowed (optional field)
+        if (!value || value.trim() === "") {
+          return true;
+        }
+
+        // Check if it's a valid URL (starts with http:// or https://)
+        if (value.startsWith("http://") || value.startsWith("https://")) {
+          try {
+            const url = new URL(value);
+            // Validate that the URL ends with a supported image extension
+            return /\.(png|jpg|jpeg|gif|webp)$/i.test(url.pathname);
+          } catch {
+            return false; // Invalid URL format
+          }
+        }
+
+        // If not a URL, validate as filename
+        // Allow alphanumeric characters, dots, hyphens, underscores, and spaces
+        // Must end with supported image extension
+        return /^[a-zA-Z0-9.\-_\s]+\.(png|jpg|jpeg|gif|webp)$/i.test(value);
+      },
+      {
+        message: "invalid_image_format",
+        path: ["image"], // Ensure error is associated with the image field
+      }
+    )
     .optional(),
 
   /**
    * Social networks array field (optional)
    *
    * Optional array of social media URLs related to the event.
-   * Each URL must pass generic pattern validation for security.
+   * Each URL must be a valid social media platform URL for security
+   * and to ensure proper social media integration.
+   *
+   * Supported Platforms:
+   * - Facebook: facebook.com, fb.com, m.facebook.com
+   * - Instagram: instagram.com, instagr.am
+   * - Twitter/X: twitter.com, x.com, mobile.twitter.com
+   * - YouTube: youtube.com, youtu.be, m.youtube.com
+   * - LinkedIn: linkedin.com
+   * - TikTok: tiktok.com
+   * - Snapchat: snapchat.com
+   * - Pinterest: pinterest.com, pinterest.fr
+   * - WhatsApp: wa.me, whatsapp.com
+   * - Telegram: t.me, telegram.me
+   *
+   * URL Format Requirements:
+   * - Must include protocol (http:// or https://)
+   * - Must be from supported social media domains
+   * - Case-insensitive validation
    *
    * Usage Examples:
-   * - Facebook event pages
-   * - Twitter announcements
-   * - Instagram accounts
-   * - YouTube channels
+   * - https://www.facebook.com/events/123456789
+   * - https://www.instagram.com/username
+   * - https://youtube.com/watch?v=abcd1234
+   * - https://twitter.com/username
+   * - https://www.linkedin.com/in/profile
    *
    * @field reseauxSociaux
    * @type {string[]}
    * @optional
-   * @validation Array of strings with regexGeneric pattern
+   * @validation Social media URL regex pattern
    */
   reseauxSociaux: z
-    .array(z.string().regex(regexGeneric, { message: "invalid_social_media" }))
+    .array(
+      z
+        .string()
+        .url({ message: "invalid_url_format" })
+        .regex(
+          /^https?:\/\/(www\.)?(facebook\.com|fb\.com|m\.facebook\.com|instagram\.com|instagr\.am|twitter\.com|x\.com|mobile\.twitter\.com|youtube\.com|youtu\.be|m\.youtube\.com|linkedin\.com|tiktok\.com|snapchat\.com|pinterest\.com|pinterest\.fr|wa\.me|whatsapp\.com|t\.me|telegram\.me)/i,
+          { message: "invalid_social_network_url" }
+        )
+        .optional()
+    )
     .optional(),
 
   /**

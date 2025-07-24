@@ -4,8 +4,12 @@
   },
   "data": {
     "eventTypes": {
-      "live_concert": "Concert en direct",
-      "festival": "Festival"
+      "live_concert": "Concert",
+      "festival": "Festival",
+      "show": "Spectacle",
+      "workshop": "Atelier",
+      "other": "Autre",
+      "sponsor": "Sponsor"
     },
     "countries": {
       "fr": "France",
@@ -184,14 +188,6 @@
       "description": "Entrez une description du chant",
       "url": "Entrez l'URL du chant",
       "musicUrl": "Entrez l'URL de la musique"
-    },
-    "dialog": {
-      "header": "Ajouter un pays",
-      "cancel": "Annuler",
-      "save": "Ajouter",
-      "description": "Ajouter un nouveau pays à la liste le temps de votre session.",
-      "placeholder": "Entrez le nom du pays",
-      "tooltip": "Ajoute provisoirement un pays à la liste des pays disponibles. Il sera supprimé à la fin de votre session."
     }
   },
   "regions": {
@@ -311,13 +307,17 @@
 
     "buttons": {
       "create": "Créer un événement",
+      "update": "Mettre à jour l'événement",
       "cancel": "Annuler",
       "addParticipant": "Ajouter un participant",
       "addSocialNetwork": "Ajouter un réseau social",
-      "imageUpload": "Choisir une image"
+      "uploadImage": "Choisir une image",
+      "changeImage": "Changer l'image"
     },
 
     "labels": {
+      "longitude": "Longitude",
+      "latitude": "Latitude",
       "titre": "Nom de l'événement",
       "type": "Type d'événement",
       "description": "Description",
@@ -332,16 +332,21 @@
       "email": "Email",
       "socialNetworks": "Réseaux sociaux",
       "participants": "Participants",
-      "image": "Affiche de l'événement (facultatif)"
+      "image": "Affiche de l'événement (facultatif)",
+      "selectedFile": "Fichier sélectionné",
+      "fileSize": "Taille du fichier",
+      "viewFile": "Voir l'image sélectionnée"
     },
     "placeholders": {
+      "longitude": "Entrez la longitude",
+      "latitude": "Entrez la latitude",
       "title": "Entrez le nom de l'événement",
       "type": "Sélectionnez le type d'événement",
       "description": "Entrez une description de l'événement",
       "startDate": "Sélectionnez la date de début",
       "endDate": "Sélectionnez la date de fin",
       "location": "Entrez le lieu de l'événement",
-      "address": "Entrez l'adresse",
+      "address": "Commencez à taper une adresse",
       "city": "Entrez la ville",
       "postalCode": "Entrez le code postal",
       "country": "Sélectionnez le pays",
@@ -562,6 +567,31 @@
     "fileErrors": {
       "size": "Le fichier doit faire moins de 10 Mo.",
       "type": "Le fichier doit être au format CSV."
+    }
+  },
+  "newData": {
+    "dialog": {
+      "headers": {
+        "countries": "Ajouter un pays",
+        "regions": "Ajouter une région"
+      },
+      "descriptions": {
+        "countries": "Ajouter un nouveau pays à la liste le temps de votre session.",
+        "regions": "Ajouter une nouvelle région à la liste le temps de votre session."
+      },
+      "buttons": { "cancel": "Annuler", "save": "Ajouter" },
+      "labels": {
+        "countries": "Nom du pays",
+        "regions": "Nom de la région"
+      },
+      "placeholders": {
+        "countries": "Entrez le nom du pays",
+        "regions": "Entrez le nom de la région"
+      },
+      "tooltips": {
+        "countries": "Ajoute provisoirement un pays à la liste des pays disponibles. Il sera supprimé à la fin de votre session.",
+        "regions": "Ajoute provisoirement une région à la liste des régions disponibles. Elle sera supprimée à la fin de votre session."
+      }
     }
   }
 }

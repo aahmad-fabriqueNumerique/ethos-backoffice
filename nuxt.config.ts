@@ -21,7 +21,8 @@ export default defineNuxtConfig({
     firebaseAdminClientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
     firebaseAdminProjectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
     openAgendaAPIKey: process.env.OPENAGENDA_API_KEY,
-    agendaUID: process.env.AGENDA_UID,
+    agendaTradUID: process.env.AGENDA_TRAD_UID,
+    loCalenDiariUID: process.env.LO_CALEN_DIARI_UID,
 
     // Public keys that are exposed to the client
     public: {

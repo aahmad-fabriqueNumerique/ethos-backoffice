@@ -22,14 +22,14 @@ const { t } = useI18n(); // Internationalization for translations
  */
 const items = ref([
   {
-    label: t("navbar.songs"), // Display name
-    icon: "pi pi-home", // PrimeIcons icon
-    to: "/chants",
-  },
-  {
     label: t("navbar.events"), // Display name
     icon: "pi pi-home", // PrimeIcons icon
     to: "/events",
+  },
+  {
+    label: t("navbar.songs"), // Display name
+    icon: "pi pi-home", // PrimeIcons icon
+    to: "/chants",
   },
   {
     label: t("navbar.users"), // Display name
