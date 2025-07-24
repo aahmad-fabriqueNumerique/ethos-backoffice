@@ -98,7 +98,7 @@ const handleCancel = () => {
   router.replace({ name: "chants" }); // Navigate back to songs list
 };
 
-const newDataType = ref<"country" | "region" | null>(null); // Type of data to add in the dialog
+const newDataType = ref<DataKey | null>(null); // Type of data to add in the dialog
 </script>
 
 <template>
@@ -199,10 +199,10 @@ const newDataType = ref<"country" | "region" | null>(null); // Type of data to a
             category="songs"
           >
             <Button
-              v-tooltip.bottom="t('newSong.dialog.tooltip')"
+              v-tooltip.bottom="t('newData.dialog.tooltips.countries')"
               type="button"
               icon="pi pi-plus"
-              @click="newDataType = 'country'"
+              @click="newDataType = 'countries'"
             />
           </SelectWithTranslation>
         </span>
@@ -216,7 +216,13 @@ const newDataType = ref<"country" | "region" | null>(null); // Type of data to a
             :placeholder="t('newSong.placeholders.region')"
             description="Région d'origine"
             category="songs"
-          />
+          >
+            <Button
+              v-tooltip.bottom="t('newData.dialog.tooltips.regions')"
+              type="button"
+              icon="pi pi-plus"
+              @click="newDataType = 'regions'"
+          /></SelectWithTranslation>
         </span>
 
         <!-- Language field -->

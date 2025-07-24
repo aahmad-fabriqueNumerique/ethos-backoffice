@@ -1,160 +1,215 @@
 <script setup lang="ts">
-import { regexGeneric } from "~/libs/regex";
+import {
+  Field,
+  Form,
+  type GenericObject,
+  type SubmissionHandler,
+} from "vee-validate";
 
 /**
- * Add Country Dialog Component
+ * Add New Entry Dialog Component
  *
- * This component provides a modal dialog for adding new countries to the system.
- * It integrates with the data store to persist the new country and emits events
- * to communicate with parent components.
+ * This component provides a modal dialog for adding new data entries to the system
+ * (countries, regions, etc.). It integrates with the data store to persist new entries
+ * and communicates with parent components through events.
  *
- * Features:
- * - Modal dialog with form input for country name
- * - Input validation to prevent empty submissions
- * - Integration with data store for persistence
- * - Internationalization support for all text
- * - Automatic input clearing after successful addition
- *
- * Events:
- * - set-visible: Emitted to close the dialog
+ * Key Features:
+ * - Modal dialog with form validation using VeeValidate
+ * - Dynamic content based on data type (countries, regions, etc.)
+ * - Input validation with error message display
+ * - Integration with useAddNewEntry composable for data management
+ * - Internationalization support for all UI text
+ * - Form submission handling with automatic dialog closure
  *
  * Props:
- * - visible: Controls dialog visibility state
+ * - visible: Boolean to control dialog visibility state
+ * - type: DataKey specifying the type of data being added (countries, regions, etc.)
+ *
+ * Events:
+ * - set-visible: Emitted to control dialog visibility, passes null to close
+ *
+ * Usage Example:
+ * ```vue
+ * <DialogAddNewEntry
+ *   :visible="showDialog"
+ *   type="countries"
+ *   @set-visible="handleDialogVisibility"
+ * />
+ * ```
+ *
+ * @author GitHub Copilot
+ * @version 1.0.0
+ * @since 2025-01-24
  */
 
+/**
+ * Event emitter type definition for dialog visibility control
+ *
+ * @interface EmitEvents
+ */
 const emit = defineEmits<{
-  (e: "set-visible", value: "country" | "region" | null): void;
+  /** Emits dialog visibility state change, null closes the dialog */
+  (e: "set-visible", value: "countries" | "regions" | null): void;
 }>();
 
-// Initialize internationalization helper for translations
+// Initialize internationalization helper for translated UI text
 const { t } = useI18n();
-const store = useDataStore();
 
+/**
+ * Component props definition
+ *
+ * @interface Props
+ */
 const { visible, type } = defineProps<{
+  /** Controls whether the dialog is visible or hidden */
   visible: boolean;
-  type: "country" | "region";
+  /** Specifies the type of data being added (countries, regions, etc.) */
+  type: DataKey;
 }>();
 
-const data = ref("");
-const error = ref<string | null>(null); // Reactive error state
+// Initialize the add new entry composable with emit function and data type
+const { addData, schema } = useAddnewEntry(emit, type);
 
-const addData = () => {
-  if (data.value.trim() === "" || !regexGeneric.test(data.value)) {
-    error.value = t("newData.dialog.error"); // Set error message if input is invalid
-    // Prevent adding empty or invalid country names) {
-    return;
-  }
-  if (type === "country") {
-    store.addCountry({ nom: data.value.trim() });
-  } else {
-    store.addRegion({
-      nom: data.value.trim(),
-      region_geographique_libelle: data.value.trim(),
-    });
-  }
-  data.value = ""; // Reset input after adding
-  emit("set-visible", null); // Close dialog
+/**
+ * Form submission handler
+ *
+ * Processes form submission by extracting the data value and calling
+ * the addData function from the composable. This will add the new entry
+ * to the store and automatically close the dialog.
+ *
+ * @param {GenericObject} values - Form values containing the data field
+ */
+const onSubmit: SubmissionHandler<GenericObject> = (values: GenericObject) => {
+  addData(values.data);
 };
 </script>
 
 <template>
   <!-- 
-    Add Country Dialog Container
-    Centers the dialog component for proper positioning and display
+    Add New Entry Dialog Container
+    Provides centered layout for the modal dialog component
   -->
   <div class="card flex justify-center">
     <!-- 
-      Dialog component for adding new countries
-      - Modal prevents interaction with background elements
-      - Non-closable prevents accidental closing
-      - Fixed width ensures consistent appearance across devices
+      Main Dialog Component
+      - Modal prevents interaction with background elements during data entry
+      - Non-closable prevents accidental closing without user action
+      - Fixed width ensures consistent appearance across different screen sizes
+      - Header text is dynamically generated based on data type using i18n
     -->
     <Dialog
       modal
-      :header="t('newSong.dialog.header')"
+      :header="t(`newData.dialog.headers.${type}`)"
       :style="{ width: '30rem' }"
       :visible="visible"
       :closable="false"
     >
       <!-- 
         Dialog description text
-        - Explains the purpose of adding a new country
-        - Uses translation for internationalization support
+        - Provides context about the purpose of adding new data
+        - Uses dynamic translation key based on data type for appropriate messaging
+        - Styled with muted colors for secondary information hierarchy
       -->
       <span class="text-surface-500 dark:text-surface-400 block mb-4">{{
-        t("newSong.dialog.description")
+        t(`newData.dialog.descriptions.${type}`)
       }}</span>
 
-      <div class="mb-2">
-        <!-- 
-          Country name input field
-          - Two-way binding with v-model for reactive updates
-          - Fluid width to fill available space
-          - Accessibility label for screen readers
-          - Placeholder text from translations
-        -->
-        <InputText
-          id="data"
-          v-model="data"
-          :aria-label="t('newSong.dialog.placeholder')"
-          fluid
-          :placeholder="t('newSong.dialog.placeholder')"
-        />
-        <!-- 
-          Error message display
-          - Conditionally rendered based on error state
-          - Uses translation for error message
-          - Styled to match design system
-        -->
-        <span v-if="error" class="text-red-500 text-xs mt-1">{{ error }}</span>
-        <!-- 
-          Clear error message when input changes
-          - Resets error state to null
-          - Ensures user feedback is immediate
-        -->
-        <InputText
-          v-model="data"
-          class="hidden"
-          aria-hidden="true"
-          @input="error = null"
-        />
-      </div>
-
       <!-- 
-        Action buttons container
-        - Right-aligned with consistent spacing between buttons
-        - Contains cancel and save functionality
+        VeeValidate Form Component
+        - Integrates with validation schema from useAddNewEntry composable
+        - Handles form submission and validation state management
+        - Triggers onSubmit handler when form is successfully validated
       -->
-      <div class="flex justify-end gap-2 mt-4">
+      <Form :validation-schema="schema" @submit="onSubmit">
         <!-- 
-          Cancel button
-          - Secondary styling to be less prominent than save button
-          - Text variant for lighter visual weight
-          - Emits set-visible event to close dialog without saving
+          Form Input Section
+          - Contains the main data entry field with validation
+          - Uses flexible column layout with consistent spacing
         -->
-        <Button
-          size="small"
-          type="button"
-          :label="t('newSong.dialog.cancel')"
-          variant="text"
-          severity="secondary"
-          @click="emit('set-visible', null)"
-        />
+        <div class="flex flex-col gap-y-2">
+          <!-- 
+            VeeValidate Field Component
+            - Provides validation integration and error handling
+            - Uses slot pattern to access field props and error messages
+            - Binds to 'data' field in validation schema
+          -->
+          <Field v-slot="{ field, errorMessage }" name="data">
+            <!-- 
+              Input Label
+              - Dynamic label text based on data type using i18n
+              - Asterisk indicates required field for accessibility
+            -->
+            <label for="data">{{ t(`newData.dialog.labels.${type}`) }} *</label>
+
+            <!-- 
+              Main Input Field
+              - Full width (fluid) to utilize available dialog space
+              - Field binding provides validation and value management
+              - Dynamic placeholder text based on data type
+              - Invalid state styling when validation errors are present
+            -->
+            <InputText
+              id="data"
+              fluid
+              v-bind="field"
+              :placeholder="t(`newData.dialog.placeholders.${type}`)"
+              :invalid="!!errorMessage"
+            />
+
+            <!-- 
+              Error Message Display
+              - Only shown when validation errors are present
+              - Uses PrimeVue Message component with error severity
+              - Small text size for subtle error indication
+              - Internationalized error messages for user-friendly feedback
+            -->
+            <Message
+              v-if="errorMessage"
+              class="text-xs text-error"
+              severity="error"
+            >
+              {{ t(`newEvent.errors.${errorMessage}`) }}
+            </Message>
+          </Field>
+        </div>
 
         <!-- 
-          Save country button
-          - Warning severity to indicate this is a primary action
-          - Executes addCountry function when clicked
-          - Adds the new country to the data store and closes dialog
+          Action Buttons Container
+          - Right-aligned button layout with consistent spacing
+          - Contains both cancel and save actions for user choice
+          - Top margin provides visual separation from form content
         -->
-        <Button
-          size="small"
-          type="button"
-          :label="t('newSong.dialog.save')"
-          severity="warn"
-          @click="addData"
-        />
-      </div>
+        <div class="flex justify-end gap-2 mt-4">
+          <!-- 
+            Cancel Button
+            - Secondary styling with text variant for reduced visual prominence
+            - Button type prevents form submission when clicked
+            - Emits set-visible event with null value to close dialog without saving
+            - Uses internationalized label for accessibility
+          -->
+          <Button
+            size="small"
+            type="button"
+            :label="t('newData.dialog.buttons.cancel')"
+            variant="text"
+            severity="secondary"
+            @click="emit('set-visible', null)"
+          />
+
+          <!-- 
+            Save Button
+            - Submit type triggers form validation and submission
+            - Warning severity provides visual emphasis as primary action
+            - Form submission automatically calls onSubmit handler
+            - Uses internationalized label for consistent UI language
+          -->
+          <Button
+            size="small"
+            type="submit"
+            :label="t('newData.dialog.buttons.save')"
+            severity="warn"
+          /></div
+      ></Form>
     </Dialog>
   </div>
 </template>

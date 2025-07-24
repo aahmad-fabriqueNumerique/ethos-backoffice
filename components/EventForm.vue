@@ -501,6 +501,8 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
 
   console.log("✅ Form submission completed, arrays reset");
 };
+
+const newDataType = ref<DataKey | null>(null); // Type of data to add in the dialog
 </script>
 
 <template>
@@ -805,7 +807,13 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
             :placeholder="t('newEvent.placeholders.country')"
             description="pays d'origine"
             category="newEvent"
-          />
+          >
+            <Button
+              v-tooltip.bottom="t('newData.dialog.tooltips.countries')"
+              type="button"
+              icon="pi pi-plus"
+              @click="newDataType = 'countries'"
+          /></SelectWithTranslation>
         </div>
       </div>
     </div>
@@ -1019,6 +1027,12 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
         />
       </div></div
   ></Form>
+  <DialogAddNewEntry
+    v-if="!!newDataType"
+    :type="newDataType!"
+    :visible="!!newDataType"
+    @set-visible="newDataType = null"
+  />
 </template>
 
 <!--
