@@ -232,6 +232,32 @@ export const themeFormSchema = z.object({
  */
 export const eventFormSchema = z.object({
   /**
+   * Event longitude coordinate
+   *
+   * Geographic longitude coordinate for precise event location.
+   * Automatically converts string input to number for form compatibility.
+   *
+   * @field longitude
+   * @type {number}
+   * @required
+   * @validation Numeric conversion with coercion
+   */
+  longitude: z.coerce.number({ required_error: "required_longitude" }),
+
+  /**
+   * Event latitude coordinate
+   *
+   * Geographic latitude coordinate for precise event location.
+   * Automatically converts string input to number for form compatibility.
+   *
+   * @field latitude
+   * @type {number}
+   * @required
+   * @validation Numeric conversion with coercion
+   */
+  latitude: z.coerce.number({ required_error: "required_latitude" }),
+
+  /**
    * Event title field
    *
    * The primary name/title of the event. This is the main identifier
@@ -273,6 +299,7 @@ export const eventFormSchema = z.object({
    * @validation regexGeneric pattern
    */
   type: z
+
     .string({ required_error: "required_type" })
     .regex(regexGeneric, { message: "invalid_type" }),
 

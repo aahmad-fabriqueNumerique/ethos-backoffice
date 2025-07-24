@@ -316,6 +316,8 @@
     },
 
     "labels": {
+      "longitude": "Longitude",
+      "latitude": "Latitude",
       "titre": "Nom de l'événement",
       "type": "Type d'événement",
       "description": "Description",
@@ -336,6 +338,8 @@
       "viewFile": "Voir l'image sélectionnée"
     },
     "placeholders": {
+      "longitude": "Entrez la longitude",
+      "latitude": "Entrez la latitude",
       "title": "Entrez le nom de l'événement",
       "type": "Sélectionnez le type d'événement",
       "description": "Entrez une description de l'événement",

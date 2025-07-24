@@ -49,8 +49,6 @@ import type EventModel from "@/models/EventModel";
 import type SelectType from "@/models/SelectType";
 import { useDataStore } from "@/stores/data";
 import { toTypedSchema } from "@vee-validate/zod";
-import { onMounted, ref, type Ref } from "vue";
-import { useRouter } from "vue-router";
 import { getAuth, type User } from "firebase/auth";
 import {
   doc,
