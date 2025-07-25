@@ -67,7 +67,7 @@
  */
 definePageMeta({
   layout: "home",
-  title: "Nouvelles Chansons", // TODO: Consider using i18n key for consistency
+  title: "Nouveaux Chants", // TODO: Consider using i18n key for consistency
 });
 
 /**
