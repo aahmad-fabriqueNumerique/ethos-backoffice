@@ -223,8 +223,6 @@ export const useDataStore = defineStore("data", () => {
       items.push({
         id: index,
         nom: translationExists ? t(`data.${key}.${d.nom}`) : d.nom,
-        slug:
-          key === "notifsTypes" ? jsonData.value[key]![index].nom : undefined,
       });
 
       index += 1;

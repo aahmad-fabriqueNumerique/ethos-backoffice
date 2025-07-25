@@ -19,7 +19,6 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { customNotifSchema } from "~/libs/formValidationSchemas";
-import { translateNotificationType } from "~/server/utils/translateNotifications";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -59,7 +58,7 @@ export default defineEventHandler(async (event) => {
     // Extract event data from request body
     const { id, message, type } = await readBody(event);
     try {
-      customNotifSchema.parse(await readBody(event));
+      customNotifSchema.parse({ id, message, type });
     } catch (error: any) {
       console.error("Validation error:", error);
       throw createError({
@@ -67,7 +66,6 @@ export default defineEventHandler(async (event) => {
         statusMessage: "Invalid request data",
       });
     }
-    console.log("Event data:", { id, message, type });
 
     // Prepare notification message with length limitation
     // FCM has character limits, so we truncate long messages
@@ -80,11 +78,6 @@ export default defineEventHandler(async (event) => {
 
     // Send notifications if we have registered devices
     if (tokens.length > 0) {
-      const labelType = await translateNotificationType(
-        decoded.lang || "fr", // Use user's language or default to French
-        type!
-      );
-
       // Send multicast notification to all registered devices
       // Uses Firebase Cloud Messaging with platform-specific configurations
       const response = await getMessaging().sendEachForMulticast({
@@ -92,7 +85,7 @@ export default defineEventHandler(async (event) => {
 
         // Basic notification content displayed to users
         notification: {
-          title: labelType,
+          title: type,
           body: updatedMessage || "Un nouvel événement est disponible",
         },
 
@@ -100,7 +93,7 @@ export default defineEventHandler(async (event) => {
         // This data can be accessed by the app when notification is received
         data: {
           eventId: String(id || "unknown"), // Convert to string for FCM
-          type: labelType,
+          type: type,
           timestamp: Date.now().toString(),
         },
 
@@ -121,7 +114,7 @@ export default defineEventHandler(async (event) => {
           payload: {
             aps: {
               alert: {
-                title: labelType,
+                title: type,
                 body: updatedMessage || "Un nouvel événement est disponible",
               },
               sound: "default", // Use default iOS notification sound

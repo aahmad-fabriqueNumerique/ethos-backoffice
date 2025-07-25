@@ -59,7 +59,7 @@ onMounted(() => {
         :model-value="field.value"
         :options="options"
         option-label="nom"
-        :option-value="name === 'type' ? 'slug' : 'nom'"
+        option-value="nom"
         class="w-full"
         :aria-label="description"
         :name="name"

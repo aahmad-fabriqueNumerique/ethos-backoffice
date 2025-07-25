@@ -595,8 +595,8 @@ export const eventFormSchema = z.object({
  * @example
  * ```typescript
  * const notificationData = {
- *   title: "Nouvel Événement",
- *   message: "Un nouveau concert vient d'être ajouté!"
+ *   message: "Un nouveau concert vient d'être ajouté!",
+ *   type: "event"
  * };
  * customNotifSchema.parse(notificationData); // ✅ Valid
  * ```
@@ -623,7 +623,27 @@ export const customNotifSchema = z.object({
       required_error: "required_message",
     })
     .regex(regexGeneric, { message: "invalid_message" }),
-  type: z.enum(["news", "song", "event", "dates_update", "new_band"]),
+
+  /**
+   * Notification type field
+   *
+   * Categorizes the notification for filtering and routing purposes.
+   * Determines how the notification is processed and displayed in the app.
+   *
+   * Usage:
+   * - Used by the notification system for categorization
+   * - Enables users to filter notifications by type
+   * - Helps determine notification priority and styling
+   * - Required for proper notification handling
+   *
+   * @field type
+   * @type {string}
+   * @required
+   * @validation String validation with required error
+   */
+  type: z.string({
+    required_error: "required_type",
+  }),
 });
 
 /**
