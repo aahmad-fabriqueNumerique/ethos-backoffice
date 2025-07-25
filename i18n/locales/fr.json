@@ -457,7 +457,7 @@
     "roles": {
       "admin": "Administrateur",
       "user": "Utilisateur",
-      "groupe": "Groupe",
+      "artiste": "Artiste",
       "organisateur": "Organisateur"
     },
     "buttons": {
