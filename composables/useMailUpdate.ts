@@ -30,7 +30,7 @@ export const useMailUpdate = (emit: Emits) => {
    * Available user roles in the system
    * These roles determine user permissions and access levels
    */
-  const roles = ["admin", "user", "groupe", "organisateur"];
+  const roles = ["admin", "user", "artiste", "organisateur"];
 
   /**
    * Form validation schema using Zod and VeeValidate
@@ -45,7 +45,7 @@ export const useMailUpdate = (emit: Emits) => {
 
       // Role validation - must be one of the defined roles when provided
       role: z
-        .enum(["admin", "user", "groupe", "organisateur"], {
+        .enum(["admin", "user", "artiste", "organisateur"], {
           errorMap: () => ({ message: "invalid_role" }),
         })
         .optional(),
