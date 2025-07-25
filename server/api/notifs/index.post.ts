@@ -57,6 +57,9 @@ export default defineEventHandler(async (event) => {
 
     // Extract event data from request body
     const { id, message, type } = await readBody(event);
+
+    console.log(`📩 Sending notification for event ID: ${id}, type: ${type}`);
+
     try {
       customNotifSchema.parse({ id, message, type });
     } catch (error: any) {

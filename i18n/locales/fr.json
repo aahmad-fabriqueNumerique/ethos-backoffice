@@ -554,7 +554,8 @@
     },
     "tooltips": {
       "backToEvents": "Si vous retournez à la liste des événements, les modifications non enregistrées seront perdues."
-    }
+    },
+    "updateMessage": "Cet évènement vient d'être mis à jour."
   },
   "newSongs": {
     "pageTitle": "Importer des chants",
@@ -569,7 +570,8 @@
     "fileErrors": {
       "size": "Le fichier doit faire moins de 10 Mo.",
       "type": "Le fichier doit être au format CSV."
-    }
+    },
+    "updateMessage": "Plusieurs chants viennent d'être ajoutés au répertoire."
   },
   "newData": {
     "dialog": {

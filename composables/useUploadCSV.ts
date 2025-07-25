@@ -1,20 +1,16 @@
 import { getAuth, type User } from "firebase/auth";
+import type { FileUploadSelectEvent } from "primevue";
 
 type UseUploadDocument = {
   isLoading: Ref<boolean>;
   isValid: ComputedRef<boolean>;
   onSubmit: () => void;
-  onSelect: (event: any) => void;
+  onSelect: (event: FileUploadSelectEvent) => void;
   selectedFile: Ref<File | null>;
   setRemoveCallback: (callback: (index: number) => void) => void; // Nouvelle fonction
 };
 
-type Emits = {
-  (e: "refresh", message: string): void;
-  (e: "update:visible", value: boolean): void;
-};
-
-const useUploadDocument = (emit: Emits): UseUploadDocument => {
+const useUploadDocument = (): UseUploadDocument => {
   const { t } = useI18n();
   const toast = useToast();
 
@@ -64,6 +60,18 @@ const useUploadDocument = (emit: Emits): UseUploadDocument => {
           },
         });
 
+        await $fetch("/api/notifs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // Authentification avec le token
+          },
+          body: JSON.stringify({
+            message: t("newSongs.updateMessage"),
+            type: t("data.notifsTypes.song"), // Utilisation de la clé de traduction
+          }),
+        });
+
         console.log("Réponse du serveur :", response);
 
         // Succès - reset du composant
@@ -91,7 +99,7 @@ const useUploadDocument = (emit: Emits): UseUploadDocument => {
    * Gère la sélection d'un fichier
    * @param event Événement de sélection de fichier
    */
-  const onSelect = (event: any): void => {
+  const onSelect = (event: FileUploadSelectEvent): void => {
     const file = event.files[0];
     if (file) {
       selectedFile.value = file;
