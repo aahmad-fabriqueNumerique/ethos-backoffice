@@ -5,18 +5,10 @@
  * @author [@CyrilPonsan](https://github.com/CyrilPonsan)
  */
 
-type Emits = {
-  (e: "refresh", message: string): void;
-  (e: "update:visible", value: boolean): void;
-};
-
 const { t } = useI18n();
 
-const emit = defineEmits<Emits>();
-
 // Récupération des fonctions du composable
-const { isLoading, isValid, onSubmit, onSelect, selectedFile } =
-  useUploadCSV(emit);
+const { isLoading, isValid, onSubmit, onSelect, selectedFile } = useUploadCSV();
 
 const handleSubmit = () => {
   onSubmit();

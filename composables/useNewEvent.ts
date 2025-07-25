@@ -48,6 +48,7 @@ import { eventFormSchema } from "@/libs/formValidationSchemas";
 import type EventModel from "@/models/EventModel";
 import type SelectType from "@/models/SelectType";
 import { useDataStore } from "@/stores/data";
+import { clearAllCache } from "@/utils/invalidateCache";
 import { toTypedSchema } from "@vee-validate/zod";
 import { getAuth, type User } from "firebase/auth";
 import {
@@ -104,6 +105,7 @@ export const useNewEvent = (): NewEventReturn => {
   const { showToast } = useNotifsToasts(); // Toast notifications for user feedback
   const router = useRouter(); // Vue Router for navigation
   const useData = useDataStore(); // Data store for static data (types, countries)
+  const { t } = useI18n(); // Internationalization helper for translated messages
 
   const { uploadImage } = useUploadImage(); // Image upload composable
 
@@ -321,16 +323,16 @@ export const useNewEvent = (): NewEventReturn => {
 
       // Step 3: Send push notifications to relevant users
       try {
-        const notificationResponse = await fetch("/api/notifs/event", {
+        const notificationResponse = await fetch("/api/notifs", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            id: eventId, // Use the generated document ID
             titre: values.titre,
-            description: values.description,
+            message: values.description,
+            type: t("data.notifsTypes.event"),
           }),
         });
 
@@ -486,7 +488,7 @@ export const useNewEvent = (): NewEventReturn => {
 
       // Step 4: Send updated event notifications
       try {
-        const notificationResponse = await fetch("/api/notifs/event", {
+        const notificationResponse = await fetch("/api/notifs", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -494,8 +496,8 @@ export const useNewEvent = (): NewEventReturn => {
           },
           body: JSON.stringify({
             id: values.id,
-            titre: values.titre,
-            description: values.description,
+            message: `${values.titre}\n${t("updateEvent.updateMessage")}`,
+            type: t("data.notifsTypes.event"),
           }),
         });
 
