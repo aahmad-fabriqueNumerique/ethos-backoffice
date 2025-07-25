@@ -23,7 +23,6 @@
  */
 
 import type { Timestamp } from "firebase/firestore";
-
 /**
  * Event Model Interface
  *
@@ -58,6 +57,7 @@ import type { Timestamp } from "firebase/firestore";
  * };
  * ```
  */
+
 export default interface EventModel {
   /**
    * Unique event identifier
