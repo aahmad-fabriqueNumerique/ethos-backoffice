@@ -6,8 +6,8 @@ import { join } from "path";
  * Defines the expected structure of translation files
  */
 interface MessagesStructure {
-  notifications?: {
-    types?: Record<string, string>;
+  data?: {
+    notifsTypes?: Record<string, string>;
   };
 }
 
@@ -50,7 +50,7 @@ export async function translateNotificationType(
     }
 
     // Extract the translated notification type
-    const translated = messages.notifications?.types?.[type];
+    const translated = messages.data?.notifsTypes?.[type];
 
     if (translated) {
       return translated;

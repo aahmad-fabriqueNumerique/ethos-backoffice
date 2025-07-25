@@ -1,0 +1,9 @@
+[
+  {
+    "nom": "event"
+  },
+  { "nom": "song" },
+  { "nom": "news" },
+  { "nom": "dates_update" },
+  { "nom": "new_band" }
+]

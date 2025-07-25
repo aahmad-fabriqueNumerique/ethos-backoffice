@@ -603,26 +603,6 @@ export const eventFormSchema = z.object({
  */
 export const customNotifSchema = z.object({
   /**
-   * Notification title field
-   *
-   * The headline or subject of the notification.
-   * Displayed prominently in push notification interfaces.
-   *
-   * Best Practices:
-   * - Keep concise (under 50 characters for mobile display)
-   * - Use clear, actionable language
-   * - Avoid special characters that might break notification systems
-   *
-   * @field title
-   * @type {string}
-   * @required
-   * @validation regexGeneric pattern for security
-   */
-  title: z
-    .string({ required_error: "required_title" })
-    .regex(regexGeneric, { message: "invalid_title" }),
-
-  /**
    * Notification message field
    *
    * The main content body of the notification.
@@ -643,6 +623,7 @@ export const customNotifSchema = z.object({
       required_error: "required_message",
     })
     .regex(regexGeneric, { message: "invalid_message" }),
+  type: z.enum(["news", "song", "event", "dates_update", "new_band"]),
 });
 
 /**
