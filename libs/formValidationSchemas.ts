@@ -595,33 +595,13 @@ export const eventFormSchema = z.object({
  * @example
  * ```typescript
  * const notificationData = {
- *   title: "Nouvel Événement",
- *   message: "Un nouveau concert vient d'être ajouté!"
+ *   message: "Un nouveau concert vient d'être ajouté!",
+ *   type: "event"
  * };
  * customNotifSchema.parse(notificationData); // ✅ Valid
  * ```
  */
 export const customNotifSchema = z.object({
-  /**
-   * Notification title field
-   *
-   * The headline or subject of the notification.
-   * Displayed prominently in push notification interfaces.
-   *
-   * Best Practices:
-   * - Keep concise (under 50 characters for mobile display)
-   * - Use clear, actionable language
-   * - Avoid special characters that might break notification systems
-   *
-   * @field title
-   * @type {string}
-   * @required
-   * @validation regexGeneric pattern for security
-   */
-  title: z
-    .string({ required_error: "required_title" })
-    .regex(regexGeneric, { message: "invalid_title" }),
-
   /**
    * Notification message field
    *
@@ -643,6 +623,27 @@ export const customNotifSchema = z.object({
       required_error: "required_message",
     })
     .regex(regexGeneric, { message: "invalid_message" }),
+
+  /**
+   * Notification type field
+   *
+   * Categorizes the notification for filtering and routing purposes.
+   * Determines how the notification is processed and displayed in the app.
+   *
+   * Usage:
+   * - Used by the notification system for categorization
+   * - Enables users to filter notifications by type
+   * - Helps determine notification priority and styling
+   * - Required for proper notification handling
+   *
+   * @field type
+   * @type {string}
+   * @required
+   * @validation String validation with required error
+   */
+  type: z.string({
+    required_error: "required_type",
+  }),
 });
 
 /**
