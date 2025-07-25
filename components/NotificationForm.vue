@@ -42,10 +42,14 @@ const { schema, loading, onSubmit, notifsTypes } = useCustomNotif();
  * @param values - The validated form values from VeeValidate
  */
 const handleSubmit: SubmissionHandler<GenericObject> = (
-  values: GenericObject
+  values: GenericObject,
+  { resetForm }
 ) => {
+  console.log("Form submitted with toto:", values);
+
   // Delegate to composable's submission handler with proper typing
-  onSubmit(values as { title: string; message: string; type: string });
+  onSubmit(values as { message: string; type: string });
+  resetForm();
 };
 </script>
 
@@ -72,46 +76,6 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
         description="Types de notifications disponibles"
         category="notifs"
       />
-    </div>
-
-    <!-- 
-      Title field section
-      - Required field for notification headline
-      - Includes validation and error display
-    -->
-    <div class="flex flex-col gap-y-2">
-      <Field v-slot="{ field, errorMessage }" name="title">
-        <!-- Field label with required indicator -->
-        <label for="title">{{ t("newNotif.labels.title") }} *</label>
-
-        <!-- 
-          Text input for notification title
-          - Fluid width for responsive design
-          - Bound to VeeValidate field for validation
-          - Shows error state with red border when invalid
-        -->
-        <InputText
-          id="title"
-          fluid
-          v-bind="field"
-          :placeholder="t('newNotif.placeholders.title')"
-          :invalid="!!errorMessage"
-        />
-
-        <!-- 
-          Error message display
-          - Only shown when validation fails
-          - Styled with error colors and small text
-          - Uses internationalized error messages
-        -->
-        <Message
-          v-if="errorMessage"
-          class="text-xs text-error"
-          severity="error"
-        >
-          {{ t(`newNotif.errors.${errorMessage}`) }}
-        </Message>
-      </Field>
     </div>
 
     <!-- 

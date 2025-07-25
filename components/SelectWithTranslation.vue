@@ -36,6 +36,11 @@ const { options, name, placeholder, description, category } = defineProps<{
   description: string;
   category: string;
 }>();
+
+onMounted(() => {
+  // Ensure options are not empty
+  console.log("Select options:", options);
+});
 </script>
 
 <template>
@@ -54,7 +59,7 @@ const { options, name, placeholder, description, category } = defineProps<{
         :model-value="field.value"
         :options="options"
         option-label="nom"
-        option-value="nom"
+        :option-value="name === 'type' ? 'slug' : 'nom'"
         class="w-full"
         :aria-label="description"
         :name="name"

@@ -520,11 +520,6 @@
     }
   },
   "notifications": {
-    "types": {
-      "event": "Nouvel évènement",
-      "song": "Nouveau chant",
-      "news": "Informations"
-    },
     "toasts": {
       "success": "Aucune notification envoyée | Une notification envoyée avec succès |  Notification envoyées avec succès à {n} utilisateurs"
     }

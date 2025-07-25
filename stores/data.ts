@@ -37,8 +37,7 @@
  * @version 1.0.0
  * @since 2025-01-24
  */
-import { defineStore } from "pinia";
-import { ref } from "vue";
+
 import type SelectType from "@/models/SelectType";
 import dataRegions from "@/assets/data/regions.json";
 import dataLanguages from "@/assets/data/languages.json";
@@ -224,6 +223,8 @@ export const useDataStore = defineStore("data", () => {
       items.push({
         id: index,
         nom: translationExists ? t(`data.${key}.${d.nom}`) : d.nom,
+        slug:
+          key === "notifsTypes" ? jsonData.value[key]![index].nom : undefined,
       });
 
       index += 1;
@@ -327,7 +328,6 @@ export const useDataStore = defineStore("data", () => {
     const newItem: SelectType = {
       id: jsonData.value[key]!.length,
       nom: item.nom,
-      slug: key === "notifsTypes" ? item.slug : undefined, // Only add slug for notifsTypes
     };
 
     // Add to raw JSON data for persistence

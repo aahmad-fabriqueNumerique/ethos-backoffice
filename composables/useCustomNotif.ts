@@ -45,11 +45,7 @@ export const useCustomNotif = () => {
    * @param values.title - The notification title/headline
    * @param values.message - The notification body text
    */
-  const onSubmit = async (values: {
-    title: string;
-    message: string;
-    type: string;
-  }) => {
+  const onSubmit = async (values: { message: string; type: string }) => {
     // Set loading state for UI feedback
     loading.value = true;
 
@@ -68,15 +64,15 @@ export const useCustomNotif = () => {
       const token = await user.getIdToken();
 
       // Send notification request to the API endpoint
-      const request = await fetch(`/api/notifs/${values.type}`, {
+      const request = await fetch("/api/notifs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          title: values.title,
           message: values.message,
+          type: values.type,
         }),
       });
 
@@ -102,6 +98,7 @@ export const useCustomNotif = () => {
   onMounted(async () => {
     // Load notification types from static data})
     notifsTypes.value = dataStore.getData("notifsTypes") || [];
+    console.log("Notification types loaded:", notifsTypes.value);
   });
 
   // Return the public API of the composable
