@@ -8,6 +8,7 @@
  */
 
 import { z } from "zod";
+import { regexGeneric } from "~/libs/regex";
 
 /**
  * Validation schema for latitude coordinates
@@ -236,3 +237,247 @@ export function validateEventsQuery(
 export function safeValidateEventsQuery(query: Record<string, unknown>) {
   return eventsQuerySchema.safeParse(query);
 }
+
+/**
+ * User Update Validation Schema
+ *
+ * This schema validates data for updating user information in the system.
+ * It ensures that user updates contain valid identifiers and optional fields
+ * while maintaining data integrity and security standards.
+ *
+ * Use Cases:
+ * - Admin user management operations
+ * - User profile updates
+ * - Role assignment and modifications
+ * - Email address changes
+ *
+ * Security Features:
+ * - UID validation with regex pattern matching
+ * - Email format validation for username updates
+ * - Restricted role enumeration to prevent privilege escalation
+ * - Optional fields allow partial updates
+ *
+ * @schema userUpdateSchema
+ * @example
+ * ```typescript
+ * import { userUpdateSchema } from '@/server/schemas/events';
+ *
+ * // Update user role
+ * const updateData = {
+ *   uid: "user123abc",
+ *   role: "admin"
+ * };
+ * const validatedData = userUpdateSchema.parse(updateData);
+ *
+ * // Update user email
+ * const emailUpdate = {
+ *   uid: "user456def",
+ *   username: "newemail@example.com"
+ * };
+ * const validatedEmailUpdate = userUpdateSchema.parse(emailUpdate);
+ * ```
+ */
+export const userUpdateSchema = z.object({
+  /**
+   * User unique identifier
+   *
+   * The Firebase UID or system-generated unique identifier for the user.
+   * Must match the generic regex pattern for security validation.
+   *
+   * Validation Rules:
+   * - Required field for all user update operations
+   * - Must pass regexGeneric pattern validation
+   * - Used to identify the target user for updates
+   *
+   * Security Considerations:
+   * - Validates against malicious input patterns
+   * - Ensures UID format consistency
+   * - Prevents injection attacks through input sanitization
+   *
+   * @field uid
+   * @type {string}
+   * @required
+   * @validation regexGeneric pattern matching
+   * @example "user_1674567890123", "firebase_uid_abc123"
+   */
+  uid: z.string().regex(regexGeneric, { message: "invalid_uid" }),
+
+  /**
+   * User email address (optional)
+   *
+   * The user's email address used as username in the system.
+   * When provided, updates the user's primary email/username.
+   *
+   * Validation Rules:
+   * - Optional field for partial user updates
+   * - Must be a valid email format if provided
+   * - Used for authentication and communication
+   *
+   * Use Cases:
+   * - User requests email change
+   * - Admin updates user contact information
+   * - Profile management operations
+   *
+   * @field username
+   * @type {string}
+   * @optional
+   * @validation Email format validation
+   * @example "user@example.com", "admin@company.fr"
+   */
+  username: z
+    .string({ required_error: "email_required" })
+    .email({ message: "invalid_email" })
+    .optional(),
+
+  /**
+   * User role assignment (optional)
+   *
+   * Defines the user's access level and permissions within the system.
+   * When provided, updates the user's role and associated permissions.
+   *
+   * Available Roles:
+   * - "admin": Full system access, can manage all users and content
+   * - "user": Standard user access, limited to own content
+   * - "organisateur": Event organizer access, can create and manage events
+   * - "artiste": Artist access, can manage own performances and content
+   *
+   * Validation Rules:
+   * - Optional field for partial user updates
+   * - Must be one of the predefined role values
+   * - Enum validation prevents invalid role assignment
+   *
+   * Security Considerations:
+   * - Restricted to predefined roles only
+   * - Prevents privilege escalation through invalid roles
+   * - Role changes should be logged for audit purposes
+   *
+   * @field role
+   * @type {enum}
+   * @optional
+   * @validation Enum validation with predefined values
+   * @options ["admin", "user", "organisateur", "artiste"]
+   * @example "admin", "user", "organisateur", "artiste"
+   */
+  role: z
+    .enum(["admin", "user", "organisateur", "artiste"], {
+      message: "invalid_role",
+    })
+    .optional(),
+});
+
+/**
+ * User Validation Schema
+ *
+ * This schema validates user data for authentication and role verification operations.
+ * It ensures that user identification and role assignment meet security requirements
+ * with strict validation for both required fields.
+ *
+ * Use Cases:
+ * - User authentication validation
+ * - Role-based access control verification
+ * - Admin privilege checks
+ * - API endpoint authorization
+ * - User identity confirmation
+ *
+ * Security Features:
+ * - Mandatory UID validation with regex pattern
+ * - Strict role enumeration for access control
+ * - No optional fields to ensure complete user data
+ * - Input sanitization against malicious patterns
+ *
+ * Differences from userUpdateSchema:
+ * - All fields are required (no optional fields)
+ * - Used for validation rather than updates
+ * - Focuses on identity and role verification
+ * - Stricter validation for security operations
+ *
+ * @schema validateUserSchema
+ * @example
+ * ```typescript
+ * import { validateUserSchema } from '@/server/schemas/events';
+ *
+ * // Validate user for admin operation
+ * const userData = {
+ *   uid: "firebase_user_abc123",
+ *   role: "admin"
+ * };
+ * const validatedUser = validateUserSchema.parse(userData);
+ *
+ * // Validate organizer for event management
+ * const organizerData = {
+ *   uid: "org_user_456def",
+ *   role: "organisateur"
+ * };
+ * const validatedOrganizer = validateUserSchema.parse(organizerData);
+ * ```
+ */
+export const validateUserSchema = z.object({
+  /**
+   * User unique identifier (required)
+   *
+   * The Firebase UID or system-generated unique identifier for the user.
+   * Must match the generic regex pattern for security validation.
+   * This field is mandatory for all user validation operations.
+   *
+   * Validation Rules:
+   * - Required field for all user validation operations
+   * - Must pass regexGeneric pattern validation
+   * - Used to uniquely identify users in the system
+   * - No empty or null values allowed
+   *
+   * Security Considerations:
+   * - Validates against malicious input patterns
+   * - Ensures UID format consistency across the system
+   * - Prevents injection attacks through input sanitization
+   * - Required for audit trail and user tracking
+   *
+   * @field uid
+   * @type {string}
+   * @required
+   * @validation regexGeneric pattern matching
+   * @example "firebase_user_123abc", "system_user_456def"
+   */
+  uid: z.string().regex(regexGeneric, { message: "invalid_uid" }),
+
+  /**
+   * User role (required)
+   *
+   * Defines the user's access level and permissions within the system.
+   * This field is mandatory for proper access control and authorization.
+   * Must be one of the predefined role values for security.
+   *
+   * Available Roles:
+   * - "admin": Full system access, can manage all users and content
+   * - "user": Standard user access, limited to own content and basic operations
+   * - "organisateur": Event organizer access, can create and manage events
+   * - "artiste": Artist access, can manage own performances and artistic content
+   *
+   * Validation Rules:
+   * - Required field for all user validation operations
+   * - Must be one of the predefined role values
+   * - Enum validation prevents invalid role assignment
+   * - No custom or undefined roles allowed
+   *
+   * Security Considerations:
+   * - Restricted to predefined roles only
+   * - Prevents privilege escalation through invalid roles
+   * - Used for access control decisions
+   * - Role verification for sensitive operations
+   *
+   * Access Control Matrix:
+   * - Admin: Full CRUD on all resources
+   * - Organisateur: CRUD on events, read on users
+   * - Artiste: CRUD on own content, read on events
+   * - User: Read access, limited personal data updates
+   *
+   * @field role
+   * @type {enum}
+   * @required
+   * @validation Enum validation with predefined values
+   * @options ["admin", "user", "organisateur", "artiste"]
+   * @example "admin", "user", "organisateur", "artiste"
+   */
+  role: z.enum(["admin", "user", "organisateur", "artiste"], {
+    message: "invalid_role",
+  }),
+});
