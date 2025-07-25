@@ -230,10 +230,12 @@ export default defineEventHandler(async (event) => {
     searchValueType,
     maxOpenAgendaItems,
     maxFirestoreItems,
+    isCalendar,
   } = validatedQuery;
 
   // Check if there are no query parameters (for cache usage)
-  const hasNoArguments = !long && !lat && !searchValue && !searchValueType;
+  const hasNoArguments =
+    !long && !lat && !searchValue && !searchValueType && !isCalendar;
 
   // Parse search query
   const searchTerm = searchValue ? String(searchValue).trim() : undefined;
@@ -319,12 +321,13 @@ export default defineEventHandler(async (event) => {
           return false; // Exclude events without coordinates
         }
 
-        // Check if event is within the bounding box (±0.5 degrees)
+        // Check if event is within the bounding box (±1.35 degrees ≈ 150km)
         const isWithinLatitude =
-          event.latitude >= latitude - 0.5 && event.latitude <= latitude + 0.5;
+          event.latitude >= latitude - 1.35 &&
+          event.latitude <= latitude + 1.35;
         const isWithinLongitude =
-          event.longitude >= longitude - 0.5 &&
-          event.longitude <= longitude + 0.5;
+          event.longitude >= longitude - 1.35 &&
+          event.longitude <= longitude + 1.35;
 
         return isWithinLatitude && isWithinLongitude;
       });
@@ -346,11 +349,15 @@ export default defineEventHandler(async (event) => {
 
   // Add date range filter to limit events to those starting within 1 month
   const today = new Date();
-  const oneMonthFromNow = new Date();
-  oneMonthFromNow.setMonth(today.getMonth() + 1);
+  const monthsFromNow = new Date();
+  if (isCalendar) {
+    monthsFromNow.setMonth(today.getMonth() + 4);
+  } else {
+    monthsFromNow.setMonth(today.getMonth() + 1);
+  }
 
   urlParams.append("timings[gte]", today.toISOString().split("T")[0]);
-  urlParams.append("timings[lte]", oneMonthFromNow.toISOString().split("T")[0]);
+  urlParams.append("timings[lte]", monthsFromNow.toISOString().split("T")[0]);
 
   // Add search query if provided
   if (searchTerm) {
@@ -394,11 +401,11 @@ export default defineEventHandler(async (event) => {
 
     if (!isNaN(longitude) && !isNaN(latitude)) {
       console.log(longitude, latitude);
-      // Use correct OpenAgenda geo filter format
-      urlParams.append("geo[northEast][lat]", (latitude + 0.5).toString());
-      urlParams.append("geo[northEast][lng]", (longitude + 0.5).toString());
-      urlParams.append("geo[southWest][lat]", (latitude - 0.5).toString());
-      urlParams.append("geo[southWest][lng]", (longitude - 0.5).toString());
+      // Use correct OpenAgenda geo filter format (±1.35 degrees ≈ 150km)
+      urlParams.append("geo[northEast][lat]", (latitude + 1.35).toString());
+      urlParams.append("geo[northEast][lng]", (longitude + 1.35).toString());
+      urlParams.append("geo[southWest][lat]", (latitude - 1.35).toString());
+      urlParams.append("geo[southWest][lng]", (longitude - 1.35).toString());
     }
   }
 

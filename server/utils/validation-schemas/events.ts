@@ -76,7 +76,7 @@ const searchValueTypeSchema = z
 
 /**
  * Validation schema for maximum items parameters
- * Accepts values between 1 and 100, with default of 20
+ * Accepts values between 1 and 300, with default of 20
  */
 const maxItemsSchema = z
   .string()
@@ -85,15 +85,15 @@ const maxItemsSchema = z
     (val) => {
       if (!val) return true; // Optional field
       const num = parseInt(val, 10);
-      return !isNaN(num) && num >= 1 && num <= 100;
+      return !isNaN(num) && num >= 1 && num <= 300;
     },
     {
-      message: "Maximum items must be a number between 1 and 100",
+      message: "Maximum items must be a number between 1 and 300",
     }
   )
   .transform((val) => {
     if (!val) return 20; // Default value
-    return Math.min(100, Math.max(1, parseInt(val, 10)));
+    return Math.min(300, Math.max(1, parseInt(val, 10)));
   });
 
 /**
@@ -151,6 +151,22 @@ export const eventsQuerySchema = z.object({
    * @range 1 to 100
    */
   maxFirestoreItems: maxItemsSchema,
+
+  isCalendar: z
+    .union([z.boolean(), z.string()])
+    .optional()
+    .default(false)
+    .transform((val) => {
+      if (typeof val === "boolean") return val;
+      if (typeof val === "string") {
+        const lower = val.toLowerCase();
+        return lower === "true" || lower === "1" || lower === "yes";
+      }
+      return false;
+    })
+    .describe(
+      "Whether to fetch events for calendar display. Begin event date will be maxed to 4 months from now."
+    ),
 });
 
 /**

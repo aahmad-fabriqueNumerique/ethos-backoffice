@@ -103,7 +103,7 @@ onMounted(() => {
       :paginator="true"
       :total-records="pagination.totalItems"
       :paginator-template="'PrevPageLink CurrentPageReport NextPageLink RowsPerPageDropdown'"
-      :rows-per-page-options="[1, 5, 10, 20, 50]"
+      :rows-per-page-options="[10, 20, 50]"
       :current-page-report-template="`${
         pagination.currentPage + 1
       } / ${pageCount}`"
