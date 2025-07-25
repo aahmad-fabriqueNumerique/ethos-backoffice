@@ -28,7 +28,8 @@
 
 import { getAuth } from "@/server/utils/firebaseAdmin";
 import admin from "firebase-admin";
-import { ADMIN, isValidRole } from "~/server/libs/roles";
+import { ADMIN } from "~/server/libs/roles";
+import { userUpdateSchema } from "~/server/utils/validation-schemas/events";
 
 /**
  * Main event handler for user update operations
@@ -80,28 +81,18 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const { role, uid, username } = body;
 
-  // Log the incoming update request for audit purposes
-  console.log(
-    "Received update request for user:",
-    uid,
-    "with new username:",
-    username,
-    "as ",
-    role
-  );
-
   try {
     // Step 6: Input validation
     // Validate role (if provided), ensure uid and username are present
-    if (!isValidRole(role) || username === undefined || uid === undefined) {
-      console.log("Invalid role or username not provided:", body);
-
-      throw createError({
-        statusCode: 400,
-        statusMessage: "bad_request",
-      });
-    }
-
+    userUpdateSchema.parse({ role, uid, username });
+  } catch (error: any) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "bad_request",
+      data: error.errors,
+    });
+  }
+  try {
     // Step 7: Execute user updates
     // Re-initialize auth instance for user operations
     const auth = getAuth();

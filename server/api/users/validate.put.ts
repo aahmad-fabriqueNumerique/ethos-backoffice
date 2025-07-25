@@ -2,6 +2,7 @@
 import { getAuth } from "@/server/utils/firebaseAdmin";
 import admin from "firebase-admin";
 import { ORGANISATEUR } from "~/server/libs/roles";
+import { validateUserSchema } from "~/server/utils/validation-schemas/events";
 
 export default defineEventHandler(async (event) => {
   const authHeader = getHeader(event, "authorization");
@@ -31,12 +32,22 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, statusMessage: "Access forbidden" });
   }
 
-  try {
-    const { uids, role } = (await readBody(event)) as {
-      uids: string[];
-      role: string;
-    };
+  const { uids, role } = (await readBody(event)) as {
+    uids: string[];
+    role: string;
+  };
 
+  try {
+    validateUserSchema.parse({ uids, role });
+  } catch (error: any) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "bad_request",
+      data: error.errors,
+    });
+  }
+
+  try {
     if (role !== ORGANISATEUR)
       throw createError({
         statusCode: 400,
