@@ -37,8 +37,7 @@
  * @version 1.0.0
  * @since 2025-01-24
  */
-import { defineStore } from "pinia";
-import { ref } from "vue";
+
 import type SelectType from "@/models/SelectType";
 import dataRegions from "@/assets/data/regions.json";
 import dataLanguages from "@/assets/data/languages.json";
@@ -46,6 +45,7 @@ import dataThemes from "@/assets/data/themes.json";
 import dataCountries from "@/assets/data/countries.json";
 import dataSongTypes from "@/assets/data/songTypes.json";
 import dataEventTypes from "@/assets/data/eventTypes.json";
+import dataNotifsTypes from "@/assets/data/notifsTypes.json";
 
 /**
  * Base data type definition
@@ -71,7 +71,8 @@ export type DataKey =
   | "themes"
   | "countries"
   | "eventTypes"
-  | "songTypes";
+  | "songTypes"
+  | "notifsTypes";
 
 /**
  * Pinia Data Store Definition
@@ -98,6 +99,7 @@ export const useDataStore = defineStore("data", () => {
     countries: SelectType[] | null;
     eventTypes: SelectType[] | null;
     songTypes: SelectType[] | null;
+    notifsTypes: SelectType[] | null;
   }>({
     regions: null,
     languages: null,
@@ -105,6 +107,7 @@ export const useDataStore = defineStore("data", () => {
     countries: null,
     eventTypes: null,
     songTypes: null,
+    notifsTypes: null,
   });
 
   /**
@@ -123,6 +126,7 @@ export const useDataStore = defineStore("data", () => {
     countries: Omit<SelectType, "id">[] | null;
     eventTypes: Omit<SelectType, "id">[] | null;
     songTypes: Omit<SelectType, "id">[] | null;
+    notifsTypes: Omit<SelectType, "id">[] | null;
   }>({
     regions: null,
     languages: null,
@@ -130,6 +134,7 @@ export const useDataStore = defineStore("data", () => {
     countries: null,
     eventTypes: null,
     songTypes: null,
+    notifsTypes: null,
   });
 
   // Initialize internationalization helpers for data translation and validation
@@ -275,6 +280,7 @@ export const useDataStore = defineStore("data", () => {
       themes: dataThemes as Omit<SelectType, "id">[],
       eventTypes: dataEventTypes as Omit<SelectType, "id">[],
       songTypes: dataSongTypes as Omit<SelectType, "id">[],
+      notifsTypes: dataNotifsTypes as Omit<SelectType, "id">[],
     };
 
     console.log("✅ Static data loaded successfully");

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Event Notification API Endpoint
  *
@@ -17,23 +18,10 @@
  */
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
-import { translateNotificationType } from "~/server/utils/translateNotifications";
+import { customNotifSchema } from "~/libs/formValidationSchemas";
 
 export default defineEventHandler(async (event) => {
-  const types = ["event", "song"];
-
   try {
-    const type = getRouterParam(event, "type");
-
-    if (type && !types.includes(type)) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: `Invalid notification type: ${type}. Allowed types are: ${types.join(
-          ", "
-        )}`,
-      });
-    }
-
     // Authentication verification
     // Ensures only authorized users can trigger notifications
     const authHeader = getHeader(event, "authorization");
@@ -68,25 +56,28 @@ export default defineEventHandler(async (event) => {
     console.log(`📱 Found ${tokens.length} device tokens:`, tokens);
 
     // Extract event data from request body
-    const { id, titre, description } = await readBody(event);
+    const { id, message, type } = await readBody(event);
+    try {
+      customNotifSchema.parse({ id, message, type });
+    } catch (error: any) {
+      console.error("Validation error:", error);
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Invalid request data",
+      });
+    }
 
-    // Prepare notification description with length limitation
-    // FCM has character limits, so we truncate long descriptions
-    let updatedDescription = description || "Aucun description fournie";
+    // Prepare notification message with length limitation
+    // FCM has character limits, so we truncate long messages
+    let updatedMessage = message;
 
-    if (description && description.length > 100) {
-      updatedDescription = description.substring(0, 100);
-      updatedDescription += "..."; // Add ellipsis to indicate truncation
+    if (message && message.length > 100) {
+      updatedMessage = message.substring(0, 100);
+      updatedMessage += "..."; // Add ellipsis to indicate truncation
     }
 
     // Send notifications if we have registered devices
     if (tokens.length > 0) {
-      let labelType = await translateNotificationType(
-        decoded.lang || "fr", // Use user's language or default to French
-        type!
-      );
-      labelType += `\n${titre}`; // Append event title to the notification label
-
       // Send multicast notification to all registered devices
       // Uses Firebase Cloud Messaging with platform-specific configurations
       const response = await getMessaging().sendEachForMulticast({
@@ -94,15 +85,15 @@ export default defineEventHandler(async (event) => {
 
         // Basic notification content displayed to users
         notification: {
-          title: labelType,
-          body: updatedDescription || "Un nouvel événement est disponible",
+          title: type,
+          body: updatedMessage || "Un nouvel événement est disponible",
         },
 
         // Custom data payload (all values must be strings for FCM compatibility)
         // This data can be accessed by the app when notification is received
         data: {
           eventId: String(id || "unknown"), // Convert to string for FCM
-          type: labelType,
+          type: type,
           timestamp: Date.now().toString(),
         },
 
@@ -123,8 +114,8 @@ export default defineEventHandler(async (event) => {
           payload: {
             aps: {
               alert: {
-                title: `${labelType} : ${titre}`,
-                body: description || "Un nouvel événement est disponible",
+                title: type,
+                body: updatedMessage || "Un nouvel événement est disponible",
               },
               sound: "default", // Use default iOS notification sound
               badge: 1, // Set app badge count to 1

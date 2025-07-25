@@ -36,6 +36,11 @@ const { options, name, placeholder, description, category } = defineProps<{
   description: string;
   category: string;
 }>();
+
+onMounted(() => {
+  // Ensure options are not empty
+  console.log("Select options:", options);
+});
 </script>
 
 <template>

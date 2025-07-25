@@ -3,6 +3,13 @@
     "unknown_error": "Le serveur est injoignable, si le problème persiste, veuillez contacter l'assistance."
   },
   "data": {
+    "notifsTypes": {
+      "event": "Événement",
+      "song": "Chant",
+      "news": "Informations",
+      "dates_update": "Mise à jour des dates",
+      "new_band": "Nouveau groupe de musique"
+    },
     "eventTypes": {
       "live_concert": "Concert",
       "festival": "Festival",
@@ -513,11 +520,6 @@
     }
   },
   "notifications": {
-    "types": {
-      "event": "Nouvel évènement",
-      "song": "Nouveau chant",
-      "news": "Informations"
-    },
     "toasts": {
       "success": "Aucune notification envoyée | Une notification envoyée avec succès |  Notification envoyées avec succès à {n} utilisateurs"
     }
