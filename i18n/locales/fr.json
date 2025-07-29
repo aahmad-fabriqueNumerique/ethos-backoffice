@@ -571,7 +571,7 @@
       "size": "Le fichier doit faire moins de 10 Mo.",
       "type": "Le fichier doit être au format CSV."
     },
-    "updateMessage": "Plusieurs chants viennent d'être ajoutés au répertoire."
+    "updateMessage": "Des nouveaux chants viennent d'être ajoutés au répertoire."
   },
   "newData": {
     "dialog": {
