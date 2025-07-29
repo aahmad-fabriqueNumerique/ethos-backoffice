@@ -23,6 +23,7 @@ export default defineNuxtConfig({
     openAgendaAPIKey: process.env.OPENAGENDA_API_KEY,
     agendaTradUID: process.env.AGENDA_TRAD_UID,
     loCalenDiariUID: process.env.LO_CALEN_DIARI_UID,
+    tmpUploadsDir: process.env.TMP_UPLOADS_DIR,
 
     // Public keys that are exposed to the client
     public: {
