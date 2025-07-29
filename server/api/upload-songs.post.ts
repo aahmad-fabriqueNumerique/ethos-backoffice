@@ -211,7 +211,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
      * The x-filename header allows clients to specify the original filename
      */
     const filename = getHeader(event, "x-filename") || "uploaded-songs.csv";
-    filepath = `./uploads/${filename}`;
+    const { tmpUploadsDir } = useRuntimeConfig();
+    filepath = `${tmpUploadsDir}/${filename}`;
 
     // Write the uploaded file to temporary location for processing
     await writeFile(filepath, fileData.data);
