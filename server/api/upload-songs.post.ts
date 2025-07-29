@@ -49,6 +49,7 @@
  * @since 2025-01-18
  */
 
+import { log } from "console";
 import { getFirestore } from "firebase-admin/firestore";
 import { writeFile, unlink } from "fs/promises";
 import Papa from "papaparse";
@@ -211,7 +212,25 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
      * The x-filename header allows clients to specify the original filename
      */
     const filename = getHeader(event, "x-filename") || "uploaded-songs.csv";
-    const { tmpUploadsDir } = useRuntimeConfig();
+
+    // Get temporary uploads directory with fallback
+    const runtimeConfig = useRuntimeConfig();
+    const tmpUploadsDir =
+      runtimeConfig.tmpUploadsDir || process.env.TMP_UPLOADS_DIR || "/tmp";
+
+    // Ensure the temporary directory path is valid
+    if (!tmpUploadsDir || tmpUploadsDir === "undefined") {
+      console.error(
+        "❌ TMP_UPLOADS_DIR environment variable not properly configured"
+      );
+      throw createError({
+        statusCode: 500,
+        statusMessage:
+          "Server configuration error: temporary uploads directory not defined",
+      });
+    }
+
+    log(`🗂️ Saving file to temporary directory: ${tmpUploadsDir}`);
     filepath = `${tmpUploadsDir}/${filename}`;
 
     // Write the uploaded file to temporary location for processing
