@@ -46,7 +46,9 @@ export default defineEventHandler(async (event) => {
     const db = getFirestore(firebaseApp);
 
     // Calculate cutoff date (60 days ago)
-    const cutoff = Timestamp.fromDate(new Date(Date.now() - 60 * 1000));
+    const cutoff = Timestamp.fromDate(
+      new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+    );
 
     // Batch size for efficient Firestore operations
     const batchSize = 500;
