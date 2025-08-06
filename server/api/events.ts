@@ -41,6 +41,7 @@ type FormattedEvent = {
   title: string;
   description: string | null;
   date: string;
+  endDate: string | null;
   image: string | null;
   locationName: string;
   city: string;
@@ -186,6 +187,7 @@ async function getCachedFirebaseEvents(
       city: data.ville,
       pays: data.pays || "",
       date: (data.dateDebut as Timestamp).toDate?.().toISOString() ?? null,
+      endDate: (data.dateFin as Timestamp).toDate?.().toISOString() ?? null,
       latitude: data.latitude ?? null,
       longitude: data.longitude ?? null,
       image: data.image || null,
@@ -388,6 +390,7 @@ export default defineEventHandler(async (event) => {
     "location",
     "links",
     "keywords",
+    "lastTiming",
   ];
 
   requiredFields.forEach((field) => {
@@ -439,6 +442,7 @@ export default defineEventHandler(async (event) => {
       description: event.longDescription?.fr || null,
       organizer: event.description?.fr || "",
       date: event.firstTiming?.begin || "",
+      endDate: event.lastTiming?.end || "",
       image,
       locationName: event.location?.name,
       city: event.location?.city || "",
@@ -480,7 +484,12 @@ export default defineEventHandler(async (event) => {
 
     if (responseLoCalenDiari?.events) {
       for (const event of responseLoCalenDiari.events) {
-        data.push(transformToEventCard(event, "localendiari_"));
+        data.push(
+          transformToEventCard(
+            { ...event, description: undefined },
+            "localendiari_"
+          )
+        );
       }
       console.log(
         `[API] Successfully fetched ${responseLoCalenDiari.events.length} events from LoCalenDiari`
