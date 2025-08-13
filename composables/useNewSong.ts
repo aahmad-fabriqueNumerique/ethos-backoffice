@@ -16,6 +16,7 @@ import { useRouter } from "vue-router";
 import { z } from "zod";
 import type SelectType from "~/models/SelectType";
 import { getAuth, type User } from "firebase/auth";
+import normalizeString from "~/utils/normalizeString";
 
 /**
  * Return type for the useNewSong composable
@@ -196,6 +197,9 @@ export const useNewSong = () => {
     const values = await sanitizeFirestoreData(
       formValues as unknown as Record<string, unknown>
     );
+    // Normalize title and create slug as an array containing the title words and the title at the end
+    const titreNormalized = normalizeString(formValues.titre).toLowerCase();
+    const slug = [...titreNormalized.split(" "), titreNormalized];
     try {
       const { getFirestore, collection, addDoc } = await import(
         "firebase/firestore"
@@ -212,6 +216,7 @@ export const useNewSong = () => {
         body: JSON.stringify({
           id: values.id,
           titre: values.titre,
+          slug,
           description: values.description,
         }),
       });
