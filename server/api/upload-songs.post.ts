@@ -52,7 +52,8 @@
 import { log } from "console";
 import { getFirestore } from "firebase-admin/firestore";
 import { writeFile, unlink } from "fs/promises";
-import Papa from "papaparse";
+import Papa, { type ParseError } from "papaparse";
+import normalizeString from "~/utils/normalizeString";
 
 /**
  * Song data interface for type safety
@@ -63,6 +64,8 @@ import Papa from "papaparse";
 interface SongData {
   /** Song title (required) */
   titre: string;
+  /** Song slug (required) */
+  slug: string[];
   /** Song author/composer (required) */
   auteur: string;
   /** Country of origin */
@@ -314,7 +317,10 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
       error: (error: any) => {
         console.error("❌ Parsing error encountered:", error);
       },
-    });
+    }) as unknown as {
+      data: Papa.ParseResult<unknown>[];
+      errors: ParseError[];
+    };
 
     // Step 5: Error Analysis and Data Validation
     console.log("🔍 Analyzing parsing results...");
@@ -482,6 +488,10 @@ function processData(data: any[]): ApiResponse {
         console.log(`🔄 Processed ${index + 1} rows...`);
       }
 
+      // Normalize title and create slug as an array containing the title words and the title at the end
+      const titreNormalized = normalizeString(row["titre"]).toLowerCase();
+      const slug = [...titreNormalized.split(" "), titreNormalized];
+
       /**
        * Transform raw CSV row into structured SongData object
        *
@@ -494,6 +504,7 @@ function processData(data: any[]): ApiResponse {
       return {
         // Required fields
         titre: row["titre"] || "",
+        slug: slug,
         auteur: row["auteur"] || "",
 
         // Basic string fields with fallbacks
