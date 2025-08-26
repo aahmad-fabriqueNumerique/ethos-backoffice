@@ -17,6 +17,7 @@ import { z } from "zod";
 import type SelectType from "~/models/SelectType";
 import { getAuth, type User } from "firebase/auth";
 import normalizeString from "~/utils/normalizeString";
+import createSlug from "~/utils/createSlug";
 
 /**
  * Return type for the useNewSong composable
@@ -197,16 +198,15 @@ export const useNewSong = () => {
     const values = await sanitizeFirestoreData(
       formValues as unknown as Record<string, unknown>
     );
-    // Normalize title and create slug as an array containing the title words and the title at the end
-    const titreNormalized = normalizeString(formValues.titre).toLowerCase();
-    const slug = [...titreNormalized.split(" "), titreNormalized];
+    // Create progressive slug with all character variations for precise search
+    const slug = createSlug(formValues.titre);
     try {
       const { getFirestore, collection, addDoc } = await import(
         "firebase/firestore"
       );
       const db = getFirestore();
       const songRef = collection(db, "chants");
-      await addDoc(songRef, values);
+      await addDoc(songRef, { ...values, slug });
       const request = await fetch("/api/notifs/song", {
         method: "POST",
         headers: {
