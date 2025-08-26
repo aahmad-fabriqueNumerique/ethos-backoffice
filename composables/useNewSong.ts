@@ -16,8 +16,6 @@ import { useRouter } from "vue-router";
 import { z } from "zod";
 import type SelectType from "~/models/SelectType";
 import { getAuth, type User } from "firebase/auth";
-import normalizeString from "~/utils/normalizeString";
-import createSlug from "~/utils/createSlug";
 
 /**
  * Return type for the useNewSong composable
@@ -197,7 +195,7 @@ export const useNewSong = () => {
       formValues as unknown as Record<string, unknown>
     );
     // Create progressive slug with all character variations for precise search
-    const slug = createSlug(formValues.titre);
+    const slug = createSlugWithWords(formValues.titre);
     try {
       const { getFirestore, collection, addDoc } = await import(
         "firebase/firestore"

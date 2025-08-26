@@ -40,11 +40,11 @@ export function createSlug(titre: string): string[] {
 }
 
 /**
- * Version alternative qui inclut aussi les mots complets
- * Utile si on veut garder la fonctionnalité actuelle en plus
+ * Version améliorée qui inclut les caractères progressifs de chaque mot
+ * En plus des caractères progressifs de la phrase complète
  *
  * @param titre - Le titre du chant
- * @returns Array contenant les caractères progressifs + les mots séparés
+ * @returns Array contenant les caractères progressifs de la phrase + les caractères progressifs de chaque mot
  */
 export function createSlugWithWords(titre: string): string[] {
   const progressiveSlug = createSlug(titre);
@@ -54,11 +54,25 @@ export function createSlugWithWords(titre: string): string[] {
     return progressiveSlug;
   }
 
-  // Ajoute aussi les mots séparés
+  // Sépare les mots
   const words = titreNormalized.split(" ").filter((word) => word.length > 0);
 
-  // Combine les deux approches sans doublons
-  const combinedSlug = [...new Set([...progressiveSlug, ...words])];
+  // Génère les caractères progressifs pour chaque mot individuellement
+  const wordProgressiveSlug: string[] = [];
+  words.forEach((word) => {
+    for (let i = 1; i <= word.length; i++) {
+      const substring = word.substring(0, i);
+      wordProgressiveSlug.push(substring);
+    }
+  });
+
+  // Combine toutes les approches sans doublons :
+  // - Caractères progressifs de la phrase complète
+  // - Caractères progressifs de chaque mot
+  // - Mots complets
+  const combinedSlug = [
+    ...new Set([...progressiveSlug, ...wordProgressiveSlug, ...words]),
+  ];
 
   return combinedSlug;
 }
