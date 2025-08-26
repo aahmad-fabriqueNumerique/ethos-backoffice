@@ -183,8 +183,6 @@ export const useNewSong = () => {
 
     isLoading.value = true;
 
-    isLoading.value = true;
-
     const auth = getAuth();
     const user = auth.currentUser as User;
 
