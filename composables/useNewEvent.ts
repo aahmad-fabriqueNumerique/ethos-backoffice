@@ -87,7 +87,10 @@ type NewEventReturn = {
   /** Reactive source URL for image preview */
   src: Ref<string | null>;
   /** Function to update an existing event */
-  onUpdate: (formValues: EventModel, image?: File | null) => void;
+  onUpdate: (
+    formValues: EventModel | Omit<EventModel, "id">,
+    image?: File | null
+  ) => void;
   /** Function to retrieve event details by ID */
   getEventDetails: (eventId: string) => Promise<EventUIModel | null>;
 };

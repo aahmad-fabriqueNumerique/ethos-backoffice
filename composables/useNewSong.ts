@@ -8,7 +8,7 @@
  */
 import { regexOptionalGeneric } from "@/libs/regex";
 import type Region from "@/models/Region";
-import type { SongCreate } from "@/models/Song";
+import type { Song, SongCreate } from "@/models/Song";
 import { useDataStore } from "@/stores/data";
 import { toTypedSchema } from "@vee-validate/zod";
 import { onMounted, ref, type Ref } from "vue";
@@ -16,13 +16,13 @@ import { useRouter } from "vue-router";
 import { z } from "zod";
 import type SelectType from "~/models/SelectType";
 import { getAuth, type User } from "firebase/auth";
-import normalizeString from "~/utils/normalizeString";
+import { doc, getDoc, getFirestore } from "firebase/firestore";
 
 /**
  * Return type for the useNewSong composable
  * Contains all necessary values and functions for the song creation form
  */
-type NewSongReturn = {
+export type NewSongReturn = {
   isLoading: Ref<boolean>;
   newSongFormSchema: ReturnType<typeof toTypedSchema>;
   onSubmit: (values: SongCreate) => void;
@@ -32,6 +32,7 @@ type NewSongReturn = {
   songTypes: Ref<SelectType[]>;
   themes: Ref<SelectType[]>;
   countries: Ref<SelectType[]>;
+  getSongDetails: (songId: string) => Promise<Song | null>;
 };
 
 /**
@@ -40,6 +41,7 @@ type NewSongReturn = {
  * @returns {Object} Form controls, validation schema, and reference data for song creation
  */
 export const useNewSong = () => {
+  const { t } = useI18n();
   const router = useRouter();
   const { showToast } = useNotifsToasts();
   const isLoading = ref(false);
@@ -102,7 +104,7 @@ export const useNewSong = () => {
         .string()
         .regex(regexOptionalGeneric, { message: "invalid_theme" })
         .optional(),
-      context_historique: z
+      contexte_historique: z
         .string()
         .regex(regexOptionalGeneric, { message: "invalid_context" })
         .optional(),
@@ -112,9 +114,47 @@ export const useNewSong = () => {
         .optional(),
       urls: z.string().url({ message: "invalid_url" }).optional(),
       urls_musique: z.string().url({ message: "invalid_music_url" }).optional(),
-      arcived: z.boolean().optional(),
+      archived: z.boolean().optional(),
     })
   );
+
+  /**
+   * Authentication Check Helper
+   *
+   * Verifies that a user is currently authenticated and retrieves a fresh
+   * authentication token for API requests. This ensures security and prevents
+   * unauthorized operations.
+   *
+   * @async
+   * @function checkAuth
+   * @returns {Promise<string | null>} Fresh auth token or null if not authenticated
+   *
+   * @example
+   * ```typescript
+   * const token = await checkAuth();
+   * if (token) {
+   *   // Proceed with authenticated operation
+   * } else {
+   *   // Handle unauthenticated user
+   * }
+   * ```
+   */
+  const checkAuth = async (): Promise<string | null> => {
+    // Get Firebase Auth instance
+    const auth = getAuth();
+    const user = auth.currentUser as User;
+
+    // Check if user is authenticated
+    if (!user) {
+      console.error("❌ No authenticated user found");
+      return null;
+    }
+
+    console.log("🔐 User authenticated, getting fresh token");
+
+    // Get fresh authentication token for API requests
+    return await user.getIdToken();
+  };
 
   /**
    * Prepares data for Firestore storage
@@ -197,9 +237,7 @@ export const useNewSong = () => {
     const values = await sanitizeFirestoreData(
       formValues as unknown as Record<string, unknown>
     );
-    // Normalize title and create slug as an array containing the title words and the title at the end
-    const titreNormalized = normalizeString(formValues.titre).toLowerCase();
-    const slug = [...titreNormalized.split(" "), titreNormalized];
+
     try {
       const { getFirestore, collection, addDoc } = await import(
         "firebase/firestore"
@@ -207,7 +245,7 @@ export const useNewSong = () => {
       const db = getFirestore();
       const songRef = collection(db, "chants");
       await addDoc(songRef, values);
-      const request = await fetch("/api/notifs/song", {
+      const request = await fetch("/api/notifs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -215,9 +253,8 @@ export const useNewSong = () => {
         },
         body: JSON.stringify({
           id: values.id,
-          titre: values.titre,
-          slug,
-          description: values.description,
+          message: `${values.titre}\n${t("updateSong.updateMessage")}`,
+          type: t("data.notifsTypes.song"),
         }),
       });
       const response = await request.json();
@@ -240,6 +277,42 @@ export const useNewSong = () => {
   const onCancel = () => {
     // Navigate back to the songs list when canceling
     router.replace("/chants");
+  };
+
+  // retourne une chanson identifiée par son id à partir de firestore
+  const getSongDetails = async (songId: string): Promise<Song | null> => {
+    try {
+      // Step 1: Verify user authentication
+      await checkAuth();
+
+      console.log("🔍 Fetching song details for ID:", songId);
+
+      // Step 2: Create Firestore references and fetch data
+      const db = getFirestore();
+      const songRef = doc(db, "chants", songId);
+      const songSnapshot = await getDoc(songRef);
+
+      // Step 3: Check if song exists
+      if (!songSnapshot.exists()) {
+        console.error("❌ Song not found with ID:", songId);
+        return null;
+      }
+
+      const rawData = songSnapshot.data();
+      console.log("📄 Raw song data fetched:", rawData);
+
+      // Step 4: Transform Firestore data to UI model format
+      const songUIData: Song = {
+        id: songSnapshot.id,
+        ...rawData,
+      } as Song;
+
+      console.log("✅ Song details transformed for UI:", songUIData);
+      return songUIData;
+    } catch (error) {
+      console.error("❌ Error fetching song details:", error);
+      return null;
+    }
   };
 
   /**
@@ -273,6 +346,7 @@ export const useNewSong = () => {
    * Provides access to form state, validation schema, handlers, and reference data
    */
   return {
+    getSongDetails,
     languages,
     onCancel,
     isLoading,

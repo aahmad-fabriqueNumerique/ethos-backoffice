@@ -557,6 +557,16 @@
     },
     "updateMessage": "Cet évènement vient d'être mis à jour."
   },
+  "updateSong": {
+    "pageTitle": "Mettre à jour un chant",
+    "buttons": {
+      "backToSongs": "Retour aux chants"
+    },
+    "tooltips": {
+      "backToSongs": "Si vous retournez à la liste des chants, les modifications non enregistrées seront perdues."
+    },
+    "updateMessage": "Un chant vient d'être mis à jour."
+  },
   "newSongs": {
     "pageTitle": "Importer des chants",
     "uploadButton": "Téléverser un fichier CSV",
