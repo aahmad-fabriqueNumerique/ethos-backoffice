@@ -213,7 +213,7 @@ export const useNewSong = () => {
         },
         body: JSON.stringify({
           id: values.id,
-          message: values.description,
+          message: `${values.titre}\n${t("updateSong.updateMessage")}`,
           type: t("data.notifsTypes.song"),
         }),
       });
