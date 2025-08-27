@@ -212,7 +212,7 @@ export const useNewSong = () => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          titre: values.titre,
+          id: values.id,
           message: values.description,
           type: t("data.notifsTypes.song"),
         }),
