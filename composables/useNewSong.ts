@@ -16,6 +16,7 @@ import { useRouter } from "vue-router";
 import { z } from "zod";
 import type SelectType from "~/models/SelectType";
 import { getAuth, type User } from "firebase/auth";
+import { createSlugWithWords } from "~/utils/createSlug";
 
 /**
  * Return type for the useNewSong composable
