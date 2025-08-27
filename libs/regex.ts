@@ -13,9 +13,9 @@ export const regexPassword =
 export const regexNumber = /^[0-9]*$/;
 
 export const regexGeneric =
-  /^[a-zA-Z0-9\s,.'’‘@\/\-+#éÉàÀè?çîÎ!âÂôÔêÊûÛ:ùÙœ_Œ()]{0,}$/;
+  /^(?!.*[<>])[\p{Script=Latin}\p{M}\p{N}\s,.;:'’‘"@\/\\\-+!?():_¡¿–—…]+$/u;
 
 export const regexOptionalGeneric =
-  /^[a-zA-Z0-9\s,.'’‘@\/\-+#éÉàÀè?çîÎ!âÂôÔêÊûÛ:ùÙœ_Œ()]{1,}$/;
+  /^(?!.*[<>])[\p{Script=Latin}\p{M}\p{N}\s,.;:'’‘"@\/\\\-+!?():_¡¿–—…]*$/u;
 
 export const regexUrl = /^https?:\/\/[\w\-]+(\.[\w\-]+)+[/#?]?.*$/;
