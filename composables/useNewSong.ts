@@ -16,7 +16,7 @@ import { useRouter } from "vue-router";
 import { z } from "zod";
 import type SelectType from "~/models/SelectType";
 import { getAuth, type User } from "firebase/auth";
-import normalizeString from "~/utils/normalizeString";
+import { createSlugWithWords } from "~/utils/createSlug";
 
 /**
  * Return type for the useNewSong composable
@@ -40,6 +40,7 @@ type NewSongReturn = {
  * @returns {Object} Form controls, validation schema, and reference data for song creation
  */
 export const useNewSong = () => {
+  const { t } = useI18n(); // Internationalization helper for translated messages
   const router = useRouter();
   const { showToast } = useNotifsToasts();
   const isLoading = ref(false);
@@ -182,8 +183,6 @@ export const useNewSong = () => {
 
     isLoading.value = true;
 
-    isLoading.value = true;
-
     const auth = getAuth();
     const user = auth.currentUser as User;
 
@@ -197,17 +196,16 @@ export const useNewSong = () => {
     const values = await sanitizeFirestoreData(
       formValues as unknown as Record<string, unknown>
     );
-    // Normalize title and create slug as an array containing the title words and the title at the end
-    const titreNormalized = normalizeString(formValues.titre).toLowerCase();
-    const slug = [...titreNormalized.split(" "), titreNormalized];
+    // Create progressive slug with all character variations for precise search
+    const slug = createSlugWithWords(formValues.titre);
     try {
       const { getFirestore, collection, addDoc } = await import(
         "firebase/firestore"
       );
       const db = getFirestore();
       const songRef = collection(db, "chants");
-      await addDoc(songRef, values);
-      const request = await fetch("/api/notifs/song", {
+      await addDoc(songRef, { ...values, slug });
+      const notificationResponse = await fetch("/api/notifs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -215,12 +213,12 @@ export const useNewSong = () => {
         },
         body: JSON.stringify({
           id: values.id,
-          titre: values.titre,
-          slug,
-          description: values.description,
+          message: `${values.titre}\n${t("updateSong.updateMessage")}`,
+          type: t("data.notifsTypes.song"),
         }),
       });
-      const response = await request.json();
+
+      const response = await notificationResponse.json();
       showToast("song", response.successCount);
       router.replace("/chants"); // Redirect to the songs page after successful creation
     } catch (error) {
