@@ -102,7 +102,7 @@ export const useNewSong = () => {
         .string()
         .regex(regexOptionalGeneric, { message: "invalid_theme" })
         .optional(),
-      context_historique: z
+      contexte_historique: z
         .string()
         .regex(regexOptionalGeneric, { message: "invalid_context" })
         .optional(),
@@ -112,7 +112,7 @@ export const useNewSong = () => {
         .optional(),
       urls: z.string().url({ message: "invalid_url" }).optional(),
       urls_musique: z.string().url({ message: "invalid_music_url" }).optional(),
-      arcived: z.boolean().optional(),
+      archived: z.boolean().optional(),
     })
   );
 
