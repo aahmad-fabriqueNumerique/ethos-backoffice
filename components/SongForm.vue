@@ -39,6 +39,8 @@ const { t } = useI18n();
 // Router for navigation after form actions
 const router = useRouter();
 
+console.log({ songDetails });
+
 /**
  * Dynamic array for managing multiple interpreter fields
  * Starts with one empty field by default

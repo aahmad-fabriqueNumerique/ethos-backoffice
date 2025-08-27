@@ -2,15 +2,14 @@
 import type { Song } from "~/models/Song";
 
 const { t } = useI18n();
+const route = useRoute();
+const songId = route.params.songId as string;
 
 const { getSongDetails } = useNewSong();
 
 const song = ref<Song | null>(null);
 
 onMounted(async () => {
-  const route = useRoute();
-  const songId = route.params.songId as string;
-
   const songData = await getSongDetails(songId);
   song.value = songData;
 });
@@ -24,7 +23,7 @@ onMounted(async () => {
  */
 const {
   onCancel,
-  onSubmit,
+  onUpdate,
   newSongFormSchema,
   isLoading,
   regions,
@@ -32,7 +31,7 @@ const {
   songTypes,
   themes,
   countries,
-} = useNewSong();
+} = useNewSong(songId);
 </script>
 
 <template>
@@ -59,7 +58,7 @@ const {
       :song-types="songTypes"
       :themes="themes"
       :countries="countries"
-      @submit="onSubmit"
+      @submit="onUpdate"
       @cancel="onCancel"
     />
   </main>

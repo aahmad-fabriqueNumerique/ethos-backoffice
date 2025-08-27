@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * New Song Creation Composable
  *
@@ -16,7 +17,13 @@ import { useRouter } from "vue-router";
 import { z } from "zod";
 import type SelectType from "~/models/SelectType";
 import { getAuth, type User } from "firebase/auth";
-import { doc, getDoc, getFirestore } from "firebase/firestore";
+import {
+  deleteField,
+  doc,
+  getDoc,
+  getFirestore,
+  updateDoc,
+} from "firebase/firestore";
 
 /**
  * Return type for the useNewSong composable
@@ -33,6 +40,7 @@ export type NewSongReturn = {
   themes: Ref<SelectType[]>;
   countries: Ref<SelectType[]>;
   getSongDetails: (songId: string) => Promise<Song | null>;
+  onUpdate: (formValues: Song) => void;
 };
 
 /**
@@ -40,7 +48,7 @@ export type NewSongReturn = {
  *
  * @returns {Object} Form controls, validation schema, and reference data for song creation
  */
-export const useNewSong = () => {
+export const useNewSong = (songId?: string) => {
   const { t } = useI18n();
   const router = useRouter();
   const { showToast } = useNotifsToasts();
@@ -222,8 +230,6 @@ export const useNewSong = () => {
 
     isLoading.value = true;
 
-    isLoading.value = true;
-
     const auth = getAuth();
     const user = auth.currentUser as User;
 
@@ -281,6 +287,7 @@ export const useNewSong = () => {
 
   // retourne une chanson identifiée par son id à partir de firestore
   const getSongDetails = async (songId: string): Promise<Song | null> => {
+    isLoading.value = true;
     try {
       // Step 1: Verify user authentication
       await checkAuth();
@@ -312,6 +319,48 @@ export const useNewSong = () => {
     } catch (error) {
       console.error("❌ Error fetching song details:", error);
       return null;
+    }
+  };
+
+  // fonction qui met à jour un chant dans la bdd firestore
+  const onUpdate = async (data: Song) => {
+    try {
+      const values = await sanitizeFirestoreData(
+        data as unknown as Record<string, unknown>
+      );
+
+      console.log({ values });
+
+      // Vérifie l'authentification de l'utilisateur
+      checkAuth().then(async () => {
+        console.log("🔄 Updating song with ID:", songId);
+
+        if (!songId || typeof songId !== "string") {
+          console.error("❌ songId est indéfini ou invalide :", songId);
+          return;
+        }
+
+        try {
+          const db = getFirestore();
+          const songRef = doc(db, "chants", songId);
+
+          // Prépare l'objet à mettre à jour
+          const updatePayload: Record<string, any> = {};
+          for (const key in values) {
+            updatePayload[key] =
+              values[key] === undefined ? deleteField() : values[key];
+          }
+
+          await updateDoc(songRef, updatePayload);
+          console.log("✅ Song updated successfully");
+        } catch (error) {
+          console.error("❌ Error updating song:", error);
+        }
+      });
+    } catch (error) {
+      console.error("❌ Error updating song:", error);
+    } finally {
+      isLoading.value = false;
     }
   };
 
@@ -356,5 +405,6 @@ export const useNewSong = () => {
     songTypes,
     countries,
     themes,
+    onUpdate,
   } as NewSongReturn;
 };
