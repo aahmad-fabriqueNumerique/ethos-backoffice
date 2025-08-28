@@ -87,7 +87,10 @@ type NewEventReturn = {
   /** Reactive source URL for image preview */
   src: Ref<string | null>;
   /** Function to update an existing event */
-  onUpdate: (formValues: EventModel, image?: File | null) => void;
+  onUpdate: (
+    formValues: EventModel | Omit<EventModel, "id">,
+    image?: File | null
+  ) => void;
   /** Function to retrieve event details by ID */
   getEventDetails: (eventId: string) => Promise<EventUIModel | null>;
 };
@@ -482,7 +485,7 @@ export const useNewEvent = (): NewEventReturn => {
       console.log("📝 Final update data:", updateData);
 
       // Step 6: Update event document in Firestore
-      await updateDoc(eventRef, updateData as { [x: string]: any });
+      await updateDoc(eventRef, updateData as { [x: string]: unknown });
 
       console.log("✅ Event updated successfully");
 

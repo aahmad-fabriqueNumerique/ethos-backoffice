@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Songs Upload API Endpoint
@@ -49,11 +48,11 @@
  * @since 2025-01-18
  */
 
-import { log } from "console";
-import { getFirestore } from "firebase-admin/firestore";
 import { writeFile, unlink } from "fs/promises";
 import Papa, { type ParseError } from "papaparse";
-import normalizeString from "~/utils/normalizeString";
+import { db } from "~/server/utils/firebaseAdmin";
+import { createSlugWithWords } from "~/utils/createSlug";
+
 
 /**
  * Song data interface for type safety
@@ -184,9 +183,6 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
     // Step 2: File Upload Processing
     console.log("📁 Processing file upload...");
 
-    // Initialize Firestore database connection
-    const db = getFirestore(firebaseApp);
-
     // Process multipart form data to extract uploaded file
     const formData = await readMultipartFormData(event);
 
@@ -233,7 +229,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
       });
     }
 
-    log(`🗂️ Saving file to temporary directory: ${tmpUploadsDir}`);
+    console.log(`🗂️ Saving file to temporary directory: ${tmpUploadsDir}`);
     filepath = `${tmpUploadsDir}/${filename}`;
 
     // Write the uploaded file to temporary location for processing
@@ -488,9 +484,8 @@ function processData(data: any[]): ApiResponse {
         console.log(`🔄 Processed ${index + 1} rows...`);
       }
 
-      // Normalize title and create slug as an array containing the title words and the title at the end
-      const titreNormalized = normalizeString(row["titre"]).toLowerCase();
-      const slug = [...titreNormalized.split(" "), titreNormalized];
+      // Normalize title and create progressive slug with all character variations
+      const slug = createSlugWithWords(row["titre"] || "");
 
       /**
        * Transform raw CSV row into structured SongData object
@@ -503,23 +498,24 @@ function processData(data: any[]): ApiResponse {
        */
       return {
         // Required fields
-        titre: row["titre"] || "",
+        titre: row["titre"] || undefined,
         slug: slug,
-        auteur: row["auteur"] || "",
+        auteur: row["auteur"] || undefined,
 
         // Basic string fields with fallbacks
-        pays: row["pays"] || "",
-        region_geographique_libelle: row["region_geographique_libelle"] || "",
-        langue: row["langue"] || "",
-        compositeur: row["compositeur"] || "",
-        paroles: row["paroles"] || "",
-        region: row["region"] || "",
-        album: row["album"] || "",
-        theme: row["theme"] || "",
-        contexte_historique: row["contexte_historique"] || "",
-        description: row["description"] || "",
-        urls: row["urls"] || "",
-        urls_musique: row["urls_musique"] || "",
+        pays: row["pays"] || undefined,
+        region_geographique_libelle:
+          row["region_geographique_libelle"] || undefined,
+        langue: row["langue"] || undefined,
+        compositeur: row["compositeur"] || undefined,
+        paroles: row["paroles"] || undefined,
+        region: row["region"] || undefined,
+        album: row["album"] || undefined,
+        theme: row["theme"] || undefined,
+        contexte_historique: row["contexte_historique"] || undefined,
+        description: row["description"] || undefined,
+        urls: row["urls"] || undefined,
+        urls_musique: row["urls_musique"] || undefined,
 
         /**
          * Array fields processing
@@ -539,11 +535,10 @@ function processData(data: any[]): ApiResponse {
             .map((s: string) => s.trim())
             .filter(Boolean) || [],
 
-        interpretes:
-          row["interpretes"]
-            ?.split(";")
-            .map((s: string) => s.trim())
-            .filter(Boolean) || [],
+        interpretes: row["interpretes"]
+          ?.split(";")
+          .map((s: string) => s.trim())
+          .filter(Boolean) || [""],
 
         /**
          * Boolean field conversion
