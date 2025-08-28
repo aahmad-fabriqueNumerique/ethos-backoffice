@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { SongSummary } from "@/models/Song";
+import type { Song, SongSummary } from "@/models/Song";
+import { deleteDoc, doc, getFirestore } from "firebase/firestore";
 import { onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -51,6 +52,30 @@ const {
  */
 onMounted(() => {
   loadInitial();
+});
+
+const songToDelete = ref<Song | null>(null);
+
+const visible = ref(false);
+
+const deleteOneSong = async () => {
+  loading.value = true;
+  // Call the Firestore delete function with the song ID
+  const db = getFirestore();
+  if (songToDelete.value) {
+    await deleteDoc(doc(db, "chants", songToDelete.value.id));
+    clearAllCache();
+    // Reload the data after deletion
+    loadInitial();
+    visible.value = false;
+    songToDelete.value = null;
+  }
+  loading.value = false;
+};
+
+watchEffect(() => {
+  if (songToDelete.value) console.log({ songToDelete });
+  else console.log("dans le cul lulu");
 });
 </script>
 
@@ -134,6 +159,61 @@ onMounted(() => {
           </div>
         </template>
       </Column>
+      <Column
+        :header="t('events.table.headers.actions')"
+        :exportable="false"
+        class="text-xs text-primary-500"
+      >
+        <template #body="slotProps">
+          <span class="flex items-center gap-x-4">
+            <!-- Bouton de navigation vers les détails -->
+            <Button
+              v-tooltip.bottom="t('songs.tooltips.actions.update')"
+              as="router-link"
+              :to="`/new-song/${slotProps.data.id}`"
+              icon="pi pi-pen-to-square"
+              rounded
+              variant="outlined"
+              text
+              aria-label="Détails du dossier administratif"
+            />
+            <!-- Bouton de suppression -->
+            <Button
+              v-tooltip.bottom="t('songs.tooltips.actions.delete')"
+              :disabled="loading"
+              :icon="
+                loading
+                  ? 'pi pi-spinner animate-spin text-primary-500'
+                  : 'pi pi-trash'
+              "
+              severity="danger"
+              rounded
+              variant="outlined"
+              text
+              aria-label="Supprimer"
+              @click="
+                console.log(slotProps.data);
+                songToDelete = slotProps.data;
+                visible = true;
+              "
+            />
+          </span>
+        </template>
+      </Column>
+      <template #empty>
+        <div class="text-center p-4">
+          <i class="pi pi-info-circle text-warn text-xl mb-2" />
+          <p>{{ t("events.empty") }}</p>
+        </div>
+      </template>
     </DataTable>
+    <SongDialogDelete
+      v-if="songToDelete && visible"
+      :titre="songToDelete?.titre"
+      :loading="loading"
+      :visible="visible"
+      @set-visible="visible = false"
+      @delete-song="deleteOneSong"
+    />
   </main>
 </template>

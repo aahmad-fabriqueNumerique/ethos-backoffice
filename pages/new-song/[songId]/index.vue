@@ -35,7 +35,7 @@ const {
 </script>
 
 <template>
-  <main class="w-5/6 mx-auto mt-8 flex flex-col gap-y-8">
+  <main class="w-5/6 mx-auto mt-8 flex flex-col gap-y-8 p-2">
     <ViewHeader :title="t('updateSong.pageTitle')">
       <Button
         v-tooltip.bottom="t('updateSong.tooltips.backToSongs')"
