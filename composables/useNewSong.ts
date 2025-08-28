@@ -2,7 +2,7 @@
 /**
  * New Song Creation Composable
  *
- * A utility composable that encapsulates all the logic for creating new songs in the application.
+ * Utility composable that encapsulates all logic for creating new songs in the application.
  * Provides form validation, data sanitization, Firestore integration, and navigation handling.
  *
  * @module composables/useNewSong
@@ -120,8 +120,16 @@ export const useNewSong = (songId?: string) => {
         .string()
         .regex(regexOptionalGeneric, { message: "invalid_description" })
         .optional(),
-      urls: z.string().url({ message: "invalid_url" }).optional(),
-      urls_musique: z.string().url({ message: "invalid_music_url" }).optional(),
+      urls: z
+        .string()
+        .url({ message: "invalid_url" })
+        .or(z.literal(""))
+        .optional(),
+      urls_musique: z
+        .string()
+        .url({ message: "invalid_music_url" })
+        .or(z.literal(""))
+        .optional(),
       archived: z.boolean().optional(),
     })
   );
@@ -216,7 +224,7 @@ export const useNewSong = (songId?: string) => {
    * Processes and submits the new song form
    *
    * Workflow:
-   * 1. Marks form as processing (loading state)
+   * 1. Sets loading state
    * 2. Sanitizes input data for database storage
    * 3. Writes the record to Firestore
    * 4. Navigates to the songs listing on success
@@ -275,7 +283,7 @@ export const useNewSong = (songId?: string) => {
   };
 
   /**
-   * Aborts the song creation process
+   * Cancels the song creation process
    *
    * Discards any form data and returns to the songs listing page.
    * Used as the handler for cancel/back buttons.
@@ -285,7 +293,7 @@ export const useNewSong = (songId?: string) => {
     router.replace("/chants");
   };
 
-  // retourne une chanson identifiée par son id à partir de firestore
+  // Returns a song identified by its id from Firestore
   const getSongDetails = async (songId: string): Promise<Song | null> => {
     isLoading.value = true;
     try {
@@ -324,40 +332,37 @@ export const useNewSong = (songId?: string) => {
 
   // fonction qui met à jour un chant dans la bdd firestore
   const onUpdate = async (values: Record<string, unknown>) => {
+    isLoading.value = true;
     try {
-      /*      const values = await sanitizeFirestoreData(
-        data as unknown as Record<string, unknown>
-      );
-*/
+      await checkAuth();
 
-      // Vérifie l'authentification de l'utilisateur
-      checkAuth().then(async () => {
-        console.log("🔄 Updating song with ID:", songId);
+      console.log("🔄 Updating song with ID:", songId);
 
-        if (!songId || typeof songId !== "string") {
-          console.error("❌ songId est indéfini ou invalide :", songId);
-          return;
+      if (!songId || typeof songId !== "string") {
+        console.error("❌ songId est indéfini ou invalide :", songId);
+        return;
+      }
+
+      try {
+        const db = getFirestore();
+        const songRef = doc(db, "chants", songId);
+
+        // Prépare l'objet à mettre à jour
+        const updatePayload: Record<string, any> = {};
+        for (const key in values) {
+          updatePayload[key] =
+            values[key] === undefined || values[key] === ""
+              ? deleteField()
+              : values[key];
         }
 
-        try {
-          const db = getFirestore();
-          const songRef = doc(db, "chants", songId);
-
-          // Prépare l'objet à mettre à jour
-          const updatePayload: Record<string, any> = {};
-          for (const key in values) {
-            updatePayload[key] =
-              values[key] === undefined || values[key] === ""
-                ? deleteField()
-                : values[key];
-          }
-
-          await updateDoc(songRef, updatePayload);
-          console.log("✅ Song updated successfully");
-        } catch (error) {
-          console.error("❌ Error updating song:", error);
-        }
-      });
+        await updateDoc(songRef, updatePayload);
+        console.log("✅ Song updated successfully");
+        clearAllCache();
+        router.replace("/chants");
+      } catch (error) {
+        console.error("❌ Error updating song:", error);
+      }
     } catch (error) {
       console.error("❌ Error updating song:", error);
     } finally {
