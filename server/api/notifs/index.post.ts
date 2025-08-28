@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
     // Retrieve all registered device tokens from Firestore
     // These tokens represent devices that can receive push notifications
     const tokensSnap = await getFirestore().collection("deviceTokens").get();
-    const tokens = tokensSnap.docs.map((doc) => doc.id);
+    const tokens = tokensSnap.docs.map((doc) => doc.data().token);
 
     console.log(`📱 Found ${tokens.length} device tokens:`, tokens);
 
