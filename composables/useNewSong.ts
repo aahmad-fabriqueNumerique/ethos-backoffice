@@ -40,7 +40,7 @@ export type NewSongReturn = {
   themes: Ref<SelectType[]>;
   countries: Ref<SelectType[]>;
   getSongDetails: (songId: string) => Promise<Song | null>;
-  onUpdate: (formValues: Song) => void;
+  onUpdate: (formValues: unknown) => void;
 };
 
 /**
@@ -323,13 +323,12 @@ export const useNewSong = (songId?: string) => {
   };
 
   // fonction qui met à jour un chant dans la bdd firestore
-  const onUpdate = async (data: Song) => {
+  const onUpdate = async (values: Record<string, unknown>) => {
     try {
-      const values = await sanitizeFirestoreData(
+      /*      const values = await sanitizeFirestoreData(
         data as unknown as Record<string, unknown>
       );
-
-      console.log({ values });
+*/
 
       // Vérifie l'authentification de l'utilisateur
       checkAuth().then(async () => {
@@ -348,7 +347,9 @@ export const useNewSong = (songId?: string) => {
           const updatePayload: Record<string, any> = {};
           for (const key in values) {
             updatePayload[key] =
-              values[key] === undefined ? deleteField() : values[key];
+              values[key] === undefined || values[key] === ""
+                ? deleteField()
+                : values[key];
           }
 
           await updateDoc(songRef, updatePayload);
