@@ -50,8 +50,9 @@
 
 import { writeFile, unlink } from "fs/promises";
 import Papa, { type ParseError } from "papaparse";
-import normalizeString from "~/utils/normalizeString";
 import { db } from "~/server/utils/firebaseAdmin";
+import { createSlugWithWords } from "~/utils/createSlug";
+
 
 /**
  * Song data interface for type safety
@@ -483,9 +484,8 @@ function processData(data: any[]): ApiResponse {
         console.log(`🔄 Processed ${index + 1} rows...`);
       }
 
-      // Normalize title and create slug as an array containing the title words and the title at the end
-      const titreNormalized = normalizeString(row["titre"]).toLowerCase();
-      const slug = [...titreNormalized.split(" "), titreNormalized];
+      // Normalize title and create progressive slug with all character variations
+      const slug = createSlugWithWords(row["titre"] || "");
 
       /**
        * Transform raw CSV row into structured SongData object

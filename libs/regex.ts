@@ -18,4 +18,5 @@ export const regexGeneric =
 export const regexOptionalGeneric =
   /^(?!.*[<>])[\p{Script=Latin}\p{M}\p{N}\s,.;:'’‘"@\/\\\-#+!?():_¡¿–—…]*$/u;
 
+
 export const regexUrl = /^https?:\/\/[\w\-]+(\.[\w\-]+)+[/#?]?.*$/;

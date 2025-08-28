@@ -24,6 +24,7 @@ import {
   getFirestore,
   updateDoc,
 } from "firebase/firestore";
+import { createSlugWithWords } from "~/utils/createSlug";
 
 /**
  * Return type for the useNewSong composable
@@ -48,6 +49,7 @@ export type NewSongReturn = {
  *
  * @returns {Object} Form controls, validation schema, and reference data for song creation
  */
+
 export const useNewSong = (songId?: string) => {
   const { t } = useI18n();
   const router = useRouter();
@@ -251,6 +253,8 @@ export const useNewSong = (songId?: string) => {
     const values = await sanitizeFirestoreData(
       formValues as unknown as Record<string, unknown>
     );
+    // Create progressive slug with all character variations for precise search
+    const slug = createSlugWithWords(formValues.titre);
 
     try {
       const { getFirestore, collection, addDoc } = await import(
@@ -258,8 +262,8 @@ export const useNewSong = (songId?: string) => {
       );
       const db = getFirestore();
       const songRef = collection(db, "chants");
-      await addDoc(songRef, values);
-      const request = await fetch("/api/notifs", {
+      await addDoc(songRef, { ...values, slug });
+      const notificationResponse = await fetch("/api/notifs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -271,7 +275,8 @@ export const useNewSong = (songId?: string) => {
           type: t("data.notifsTypes.song"),
         }),
       });
-      const response = await request.json();
+
+      const response = await notificationResponse.json();
       showToast("song", response.successCount);
       router.replace("/chants"); // Redirect to the songs page after successful creation
     } catch (error) {
