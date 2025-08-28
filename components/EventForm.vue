@@ -500,6 +500,10 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
 };
 
 const newDataType = ref<DataKey | null>(null); // Type of data to add in the dialog
+
+watchEffect(() => {
+  console.log({ isLoading });
+});
 </script>
 
 <template>

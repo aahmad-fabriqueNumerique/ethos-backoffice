@@ -18,6 +18,7 @@
 import { initializeApp, cert, getApps, getApp } from "firebase-admin/app";
 import { getAuth as _getAuth } from "firebase-admin/auth";
 import { getStorage as _getStorage } from "firebase-admin/storage";
+import { getFirestore } from "firebase-admin/firestore";
 
 /**
  * Service account configuration object created from environment variables
@@ -90,3 +91,8 @@ export const getAuth = () => _getAuth(firebaseAdminApp);
 export const getStorage = () => _getStorage(firebaseAdminApp);
 
 export const firebaseApp = firebaseAdminApp;
+
+export const db = getFirestore(firebaseApp);
+db.settings({
+  ignoreUndefinedProperties: true,
+});

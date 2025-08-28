@@ -115,7 +115,11 @@
     "addSongs": "Importer des chants",
     "tooltips": {
       "addSong": "Ajouter un nouveau chant",
-      "addSongs": "Importer des chants depuis un fichier CSV"
+      "addSongs": "Importer des chants depuis un fichier CSV",
+      "actions": {
+        "update": "Modifier le chant",
+        "delete": "Supprimer le chant"
+      }
     },
     "headers": {
       "title": "Titre",
@@ -151,6 +155,14 @@
       "required_song_type": "Un type de chant est requis",
       "invalid_song_type": "Le type de chant n'est pas valide",
       "no_song_type": "Choisissez au moins un type de chant"
+    },
+    "dialog": {
+      "delete": {
+        "message": "Êtes-vous sûr de vouloir supprimer ce chant ? Cette action est irréversible.",
+        "title": "Supprimer le chant",
+        "confirm": "Confirmer la suppression",
+        "cancel": "Annuler"
+      }
     }
   },
   "newSong": {
@@ -556,6 +568,16 @@
       "backToEvents": "Si vous retournez à la liste des événements, les modifications non enregistrées seront perdues."
     },
     "updateMessage": "Cet évènement vient d'être mis à jour."
+  },
+  "updateSong": {
+    "pageTitle": "Mettre à jour un chant",
+    "buttons": {
+      "backToSongs": "Retour aux chants"
+    },
+    "tooltips": {
+      "backToSongs": "Si vous retournez à la liste des chants, les modifications non enregistrées seront perdues."
+    },
+    "updateMessage": "Un chant vient d'être mis à jour."
   },
   "newSongs": {
     "pageTitle": "Importer des chants",

@@ -1,14 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * New Song Creation Composable
  *
- * A utility composable that encapsulates all the logic for creating new songs in the application.
+ * Utility composable that encapsulates all logic for creating new songs in the application.
  * Provides form validation, data sanitization, Firestore integration, and navigation handling.
  *
  * @module composables/useNewSong
  */
 import { regexOptionalGeneric } from "@/libs/regex";
 import type Region from "@/models/Region";
-import type { SongCreate } from "@/models/Song";
+import type { Song, SongCreate } from "@/models/Song";
 import { useDataStore } from "@/stores/data";
 import { toTypedSchema } from "@vee-validate/zod";
 import { onMounted, ref, type Ref } from "vue";
@@ -16,13 +17,20 @@ import { useRouter } from "vue-router";
 import { z } from "zod";
 import type SelectType from "~/models/SelectType";
 import { getAuth, type User } from "firebase/auth";
+import {
+  deleteField,
+  doc,
+  getDoc,
+  getFirestore,
+  updateDoc,
+} from "firebase/firestore";
 import { createSlugWithWords } from "~/utils/createSlug";
 
 /**
  * Return type for the useNewSong composable
  * Contains all necessary values and functions for the song creation form
  */
-type NewSongReturn = {
+export type NewSongReturn = {
   isLoading: Ref<boolean>;
   newSongFormSchema: ReturnType<typeof toTypedSchema>;
   onSubmit: (values: SongCreate) => void;
@@ -32,6 +40,8 @@ type NewSongReturn = {
   songTypes: Ref<SelectType[]>;
   themes: Ref<SelectType[]>;
   countries: Ref<SelectType[]>;
+  getSongDetails: (songId: string) => Promise<Song | null>;
+  onUpdate: (formValues: unknown) => void;
 };
 
 /**
@@ -39,8 +49,9 @@ type NewSongReturn = {
  *
  * @returns {Object} Form controls, validation schema, and reference data for song creation
  */
-export const useNewSong = () => {
-  const { t } = useI18n(); // Internationalization helper for translated messages
+
+export const useNewSong = (songId?: string) => {
+  const { t } = useI18n();
   const router = useRouter();
   const { showToast } = useNotifsToasts();
   const isLoading = ref(false);
@@ -111,11 +122,57 @@ export const useNewSong = () => {
         .string()
         .regex(regexOptionalGeneric, { message: "invalid_description" })
         .optional(),
-      urls: z.string().url({ message: "invalid_url" }).optional(),
-      urls_musique: z.string().url({ message: "invalid_music_url" }).optional(),
+      urls: z
+        .string()
+        .url({ message: "invalid_url" })
+        .or(z.literal(""))
+        .optional(),
+      urls_musique: z
+        .string()
+        .url({ message: "invalid_music_url" })
+        .or(z.literal(""))
+        .optional(),
       archived: z.boolean().optional(),
     })
   );
+
+  /**
+   * Authentication Check Helper
+   *
+   * Verifies that a user is currently authenticated and retrieves a fresh
+   * authentication token for API requests. This ensures security and prevents
+   * unauthorized operations.
+   *
+   * @async
+   * @function checkAuth
+   * @returns {Promise<string | null>} Fresh auth token or null if not authenticated
+   *
+   * @example
+   * ```typescript
+   * const token = await checkAuth();
+   * if (token) {
+   *   // Proceed with authenticated operation
+   * } else {
+   *   // Handle unauthenticated user
+   * }
+   * ```
+   */
+  const checkAuth = async (): Promise<string | null> => {
+    // Get Firebase Auth instance
+    const auth = getAuth();
+    const user = auth.currentUser as User;
+
+    // Check if user is authenticated
+    if (!user) {
+      console.error("❌ No authenticated user found");
+      return null;
+    }
+
+    console.log("🔐 User authenticated, getting fresh token");
+
+    // Get fresh authentication token for API requests
+    return await user.getIdToken();
+  };
 
   /**
    * Prepares data for Firestore storage
@@ -169,7 +226,7 @@ export const useNewSong = () => {
    * Processes and submits the new song form
    *
    * Workflow:
-   * 1. Marks form as processing (loading state)
+   * 1. Sets loading state
    * 2. Sanitizes input data for database storage
    * 3. Writes the record to Firestore
    * 4. Navigates to the songs listing on success
@@ -198,6 +255,7 @@ export const useNewSong = () => {
     );
     // Create progressive slug with all character variations for precise search
     const slug = createSlugWithWords(formValues.titre);
+
     try {
       const { getFirestore, collection, addDoc } = await import(
         "firebase/firestore"
@@ -230,7 +288,7 @@ export const useNewSong = () => {
   };
 
   /**
-   * Aborts the song creation process
+   * Cancels the song creation process
    *
    * Discards any form data and returns to the songs listing page.
    * Used as the handler for cancel/back buttons.
@@ -238,6 +296,83 @@ export const useNewSong = () => {
   const onCancel = () => {
     // Navigate back to the songs list when canceling
     router.replace("/chants");
+  };
+
+  // Returns a song identified by its id from Firestore
+  const getSongDetails = async (songId: string): Promise<Song | null> => {
+    isLoading.value = true;
+    try {
+      // Step 1: Verify user authentication
+      await checkAuth();
+
+      console.log("🔍 Fetching song details for ID:", songId);
+
+      // Step 2: Create Firestore references and fetch data
+      const db = getFirestore();
+      const songRef = doc(db, "chants", songId);
+      const songSnapshot = await getDoc(songRef);
+
+      // Step 3: Check if song exists
+      if (!songSnapshot.exists()) {
+        console.error("❌ Song not found with ID:", songId);
+        return null;
+      }
+
+      const rawData = songSnapshot.data();
+      console.log("📄 Raw song data fetched:", rawData);
+
+      // Step 4: Transform Firestore data to UI model format
+      const songUIData: Song = {
+        id: songSnapshot.id,
+        ...rawData,
+      } as Song;
+
+      console.log("✅ Song details transformed for UI:", songUIData);
+      return songUIData;
+    } catch (error) {
+      console.error("❌ Error fetching song details:", error);
+      return null;
+    }
+  };
+
+  // fonction qui met à jour un chant dans la bdd firestore
+  const onUpdate = async (values: Record<string, unknown>) => {
+    isLoading.value = true;
+    try {
+      await checkAuth();
+
+      console.log("🔄 Updating song with ID:", songId);
+
+      if (!songId || typeof songId !== "string") {
+        console.error("❌ songId est indéfini ou invalide :", songId);
+        return;
+      }
+
+      try {
+        const db = getFirestore();
+        const songRef = doc(db, "chants", songId);
+
+        // Prépare l'objet à mettre à jour
+        const updatePayload: Record<string, any> = {};
+        for (const key in values) {
+          updatePayload[key] =
+            values[key] === undefined || values[key] === ""
+              ? deleteField()
+              : values[key];
+        }
+
+        await updateDoc(songRef, updatePayload);
+        console.log("✅ Song updated successfully");
+        clearAllCache();
+        router.replace("/chants");
+      } catch (error) {
+        console.error("❌ Error updating song:", error);
+      }
+    } catch (error) {
+      console.error("❌ Error updating song:", error);
+    } finally {
+      isLoading.value = false;
+    }
   };
 
   /**
@@ -271,6 +406,7 @@ export const useNewSong = () => {
    * Provides access to form state, validation schema, handlers, and reference data
    */
   return {
+    getSongDetails,
     languages,
     onCancel,
     isLoading,
@@ -280,5 +416,6 @@ export const useNewSong = () => {
     songTypes,
     countries,
     themes,
+    onUpdate,
   } as NewSongReturn;
 };
