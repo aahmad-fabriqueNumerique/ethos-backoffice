@@ -127,6 +127,7 @@
       "country": "Pays",
       "language": "Langue"
     },
+    "empty": "Aucun chant trouvé",
     "errors": {
       "no_title": "Un titre est requis",
       "invalid_title": "Le titre n'est pas valide",

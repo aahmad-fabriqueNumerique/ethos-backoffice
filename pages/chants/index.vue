@@ -203,7 +203,7 @@ watchEffect(() => {
       <template #empty>
         <div class="text-center p-4">
           <i class="pi pi-info-circle text-warn text-xl mb-2" />
-          <p>{{ t("events.empty") }}</p>
+          <p>{{ t("songs.empty") }}</p>
         </div>
       </template>
     </DataTable>
