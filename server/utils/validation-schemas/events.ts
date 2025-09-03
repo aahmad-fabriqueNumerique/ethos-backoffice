@@ -437,7 +437,7 @@ export const validateUserSchema = z.object({
    * @validation regexGeneric pattern matching
    * @example "firebase_user_123abc", "system_user_456def"
    */
-  uid: z.string().regex(regexGeneric, { message: "invalid_uid" }),
+  uids: z.array(z.string().regex(regexGeneric, { message: "invalid_uid" })),
 
   /**
    * User role (required)
