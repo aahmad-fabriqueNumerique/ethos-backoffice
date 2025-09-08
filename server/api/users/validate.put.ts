@@ -69,6 +69,19 @@ export default defineEventHandler(async (event) => {
             });
           }
         });
+
+      await admin
+        .firestore()
+        .collection("publicProfiles")
+        .where("userId", "==", uid)
+        .get()
+        .then((snapshot) => {
+          if (!snapshot.empty) {
+            snapshot.forEach((doc) => {
+              doc.ref.update({ isAuthorized: true });
+            });
+          }
+        });
     }
   } catch (err: any) {
     const code = err?.errorInfo?.code || err?.code || "unknown";
