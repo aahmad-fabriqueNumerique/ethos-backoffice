@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getAuth } from "@/server/utils/firebaseAdmin";
 import admin from "firebase-admin";
-import { ORGANISATEUR } from "~/server/libs/roles";
+import { ARTISTE, ORGANISATEUR } from "~/server/libs/roles";
 import { validateUserSchema } from "~/server/utils/validation-schemas/events";
 
 export default defineEventHandler(async (event) => {
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    if (role !== ORGANISATEUR)
+    if (![ORGANISATEUR, ARTISTE].includes(role))
       throw createError({
         statusCode: 400,
         statusMessage: "Invalid role",
@@ -66,6 +66,19 @@ export default defineEventHandler(async (event) => {
           if (!snapshot.empty) {
             snapshot.forEach((doc) => {
               doc.ref.delete();
+            });
+          }
+        });
+
+      await admin
+        .firestore()
+        .collection("publicProfiles")
+        .where("userId", "==", uid)
+        .get()
+        .then((snapshot) => {
+          if (!snapshot.empty) {
+            snapshot.forEach((doc) => {
+              doc.ref.update({ isAuthorized: true });
             });
           }
         });
