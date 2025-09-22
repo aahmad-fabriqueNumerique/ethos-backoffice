@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
         .then((snapshot) => {
           if (!snapshot.empty) {
             snapshot.forEach((doc) => {
-              doc.ref.update({ isAuthorized: true });
+              doc.ref.update({ isAuthorized: true, type: role });
             });
           }
         });
