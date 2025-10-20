@@ -1,3 +1,4 @@
+import { normalizeString } from "#imports";
 import {
   collection,
   query,
@@ -10,6 +11,7 @@ import {
   type DocumentData,
   type DocumentSnapshot,
   getCountFromServer,
+  where,
 } from "firebase/firestore";
 import type { DataTablePageEvent, DataTableSortEvent } from "primevue";
 
@@ -83,6 +85,7 @@ export const useFirestorePaginator = <T>(
   const result: Ref<T[]> = ref([]);
   const loading = ref(false);
   const error = ref<Error | null>(null);
+  const searchTerm = ref("");
 
   // Document cursors for efficient pagination
   const firstDoc: Ref<DocumentSnapshot<DocumentData> | null> = ref(null);
@@ -96,6 +99,8 @@ export const useFirestorePaginator = <T>(
     sortField: orderByField as string,
     sortOrder: 1 as 1 | -1, // 1 for ascending, -1 for descending
   });
+
+  let timer: NodeJS.Timeout | null = null;
 
   /**
    * Computed property that calculates total number of pages
@@ -556,6 +561,79 @@ export const useFirestorePaginator = <T>(
     return cacheStore.getCacheStats();
   };
 
+  const onResetFilter = () => {
+    searchTerm.value = "";
+    loadInitial();
+  };
+
+  const searchTitle = async () => {
+    invalidateCache();
+    console.log("🔍 Searching for term:", searchTerm.value);
+    try {
+      const normalizedString = normalizeString(searchTerm.value.trim());
+      const q = query(
+        collection(db, "chants"),
+        where("slug", "array-contains", normalizedString),
+        where("archived", "==", false),
+        limit(10)
+      );
+      loading.value = true;
+      const snap = await getDocs(q);
+      console.log("🔍 Search results:", snap.docs);
+
+      if (snap.empty) {
+        console.warn("⚠️ No results found for initial page");
+        pagination.value.totalItems = 0;
+        result.value = [];
+        firstDoc.value = null;
+        lastDoc.value = null;
+        return;
+      }
+
+      // Map Firestore documents to typed objects with ID
+      const mappedResults = snap.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          } as unknown as T)
+      );
+
+      pagination.value = {
+        currentPage: 0,
+        pageSize: pageSize,
+        totalItems: mappedResults.length,
+        sortField: orderByField as string,
+        sortOrder: 1 as 1 | -1, // 1 for ascending, -1 for descending
+      };
+
+      // Update reactive state with new data
+      result.value = mappedResults;
+      console.log("📄 Search results loaded from Firestore:", result.value);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  watch([searchTerm], () => {
+    if (searchTerm.value.length >= 2) {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(() => {
+        searchTitle();
+      }, 300);
+    } else if (searchTerm.value === "") {
+      onResetFilter();
+    }
+  });
+
+  onBeforeUnmount(() => {
+    if (timer) clearTimeout(timer);
+  });
+
   // Return all public methods and reactive state
   return {
     // Reactive state
@@ -584,5 +662,8 @@ export const useFirestorePaginator = <T>(
     forceRefresh, // Force refresh data bypassing cache
     invalidateCache, // Invalidate cache for this collection
     getCacheStats, // Get cache statistics
+    searchTerm,
+    searchTitle,
+    onResetFilter,
   };
 };

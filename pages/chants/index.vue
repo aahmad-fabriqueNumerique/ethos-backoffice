@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Song, SongSummary } from "@/models/Song";
 import { deleteDoc, doc, getFirestore } from "firebase/firestore";
+import type { DataTableFilterMeta } from "primevue";
 import { onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -45,7 +46,11 @@ const {
   loadInitial, // Function to load the first page
   pagination, // Pagination state object
   pageCount, // Total number of pages
+  searchTerm,
+  onResetFilter,
 } = useFirestorePaginator<SongSummary>("chants", "titre", 10);
+
+const filters = ref<DataTableFilterMeta>({});
 
 /**
  * Load the initial data when component is mounted
@@ -72,11 +77,6 @@ const deleteOneSong = async () => {
   }
   loading.value = false;
 };
-
-watchEffect(() => {
-  if (songToDelete.value) console.log({ songToDelete });
-  else console.log("dans le cul lulu");
-});
 </script>
 
 <template>
@@ -119,6 +119,7 @@ watchEffect(() => {
         - Custom templates are used for headers and pagination controls
       -->
     <DataTable
+      v-model:filters="filters"
       :value="result"
       :loading="loading"
       data-key="id"
@@ -135,7 +136,38 @@ watchEffect(() => {
       class="text-xs"
       @page="pageEventHandler"
       @sort="sortHandler"
-    >
+      ><!-- En-tête avec barre de recherche -->
+      <template #header>
+        <div class="flex items-center gap-x-4 rounded-tl-lg rounded-tr-lg p-2">
+          <div class="w-full flex items-center justify-end">
+            <!-- Barre de recherche -->
+            <IconField class="flex items-center gap-x-4">
+              <!-- Icône de recherche -->
+              <InputIcon>
+                <i class="pi pi-search opacity-20" />
+              </InputIcon>
+              <!-- Champ de recherche -->
+              <InputText
+                v-model="searchTerm"
+                class="focus:!ring-0 focus:!ring-offset-0 w-80"
+                :placeholder="t('songs.searchPlaceholder')"
+              />
+              <!-- Icônes d'état (effacer/chargement) -->
+              <InputIcon>
+                <i
+                  v-if="searchTerm && !loading"
+                  class="pi pi-times-circle cursor-pointer"
+                  @click="onResetFilter"
+                />
+                <i
+                  v-else-if="loading && searchTerm"
+                  class="pi pi-spinner animate-spin text-primary-500"
+                />
+              </InputIcon>
+            </IconField>
+          </div>
+        </div>
+      </template>
       <!-- Custom start template for the paginator -->
       <template #paginatorstart>
         <span class="flex text-xs items-center gap-x-2 font-bold">
