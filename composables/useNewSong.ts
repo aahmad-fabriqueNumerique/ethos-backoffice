@@ -192,6 +192,9 @@ export const useNewSong = (songId?: string) => {
 
     // 1. First, process all properties
     for (const [key, value] of Object.entries(data)) {
+      if (key === "archived") {
+        result[key] = value === undefined ? false : true;
+      }
       // Skip undefined values completely
       if (value === undefined) {
         continue;

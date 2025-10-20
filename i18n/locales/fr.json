@@ -121,6 +121,7 @@
         "delete": "Supprimer le chant"
       }
     },
+    "searchPlaceholder": "Rechercher un chant par titre",
     "headers": {
       "title": "Titre",
       "author": "Artiste",
