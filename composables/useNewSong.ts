@@ -104,8 +104,9 @@ export const useNewSong = (songId?: string) => {
         .string({ required_error: "no_country" })
         .regex(regexOptionalGeneric, { message: "invalid_country" }),
       langue: z
-        .string({ required_error: "no_language" })
-        .regex(regexOptionalGeneric, { message: "invalid_language" }),
+        .string()
+        .regex(regexOptionalGeneric, { message: "invalid_language" })
+        .optional(),
       album: z
         .string()
         .regex(regexOptionalGeneric, { message: "invalid_album" })
@@ -123,15 +124,29 @@ export const useNewSong = (songId?: string) => {
         .regex(regexOptionalGeneric, { message: "invalid_description" })
         .optional(),
       urls: z
-        .string()
-        .url({ message: "invalid_url" })
-        .or(z.literal(""))
-        .optional(),
+        .array(
+          z
+            .string()
+            .transform((val) => (val.trim() === "" ? undefined : val))
+            .optional()
+            .refine((val) => !val || z.string().url().safeParse(val).success, {
+              message: "invalid_url",
+            })
+        )
+        .optional()
+        .default([]),
       urls_musique: z
-        .string()
-        .url({ message: "invalid_music_url" })
-        .or(z.literal(""))
-        .optional(),
+        .array(
+          z
+            .string()
+            .transform((val) => (val.trim() === "" ? undefined : val))
+            .optional()
+            .refine((val) => !val || z.string().url().safeParse(val).success, {
+              message: "invalid_music_url",
+            })
+        )
+        .optional()
+        .default([]),
       archived: z.boolean().optional(),
     })
   );
@@ -339,7 +354,7 @@ export const useNewSong = (songId?: string) => {
   };
 
   // fonction qui met à jour un chant dans la bdd firestore
-  const onUpdate = async (values: Record<string, unknown>) => {
+  const onUpdate = async (formValues: Record<string, unknown>) => {
     isLoading.value = true;
     try {
       await checkAuth();
@@ -350,6 +365,13 @@ export const useNewSong = (songId?: string) => {
         console.error("❌ songId est indéfini ou invalide :", songId);
         return;
       }
+      let values = await sanitizeFirestoreData(
+        formValues as unknown as Record<string, unknown>
+      );
+      // Create progressive slug with all character variations for precise search
+      const slug = createSlugWithWords(values.titre as string);
+
+      values = { ...values, slug };
 
       try {
         const db = getFirestore();
