@@ -53,7 +53,6 @@ import Papa, { type ParseError } from "papaparse";
 import { db } from "~/server/utils/firebaseAdmin";
 import { createSlugWithWords } from "~/utils/createSlug";
 
-
 /**
  * Song data interface for type safety
  * Defines the structure of song objects stored in Firestore
@@ -69,8 +68,6 @@ interface SongData {
   auteur: string;
   /** Country of origin */
   pays: string;
-  /** Geographic region description */
-  region_geographique_libelle: string;
   /** Song language */
   langue: string;
   /** Music composer */
@@ -92,9 +89,9 @@ interface SongData {
   /** Song description */
   description: string;
   /** General URLs related to the song */
-  urls: string;
+  urls: string[];
   /** Music streaming URLs */
-  urls_musique: string;
+  urls_musique: string[];
   /** Archive status flag */
   archived: boolean;
 }
@@ -504,8 +501,6 @@ function processData(data: any[]): ApiResponse {
 
         // Basic string fields with fallbacks
         pays: row["pays"] || undefined,
-        region_geographique_libelle:
-          row["region_geographique_libelle"] || undefined,
         langue: row["langue"] || undefined,
         compositeur: row["compositeur"] || undefined,
         paroles: row["paroles"] || undefined,
@@ -514,8 +509,6 @@ function processData(data: any[]): ApiResponse {
         theme: row["theme"] || undefined,
         contexte_historique: row["contexte_historique"] || undefined,
         description: row["description"] || undefined,
-        urls: row["urls"] || undefined,
-        urls_musique: row["urls_musique"] || undefined,
 
         /**
          * Array fields processing
@@ -539,6 +532,18 @@ function processData(data: any[]): ApiResponse {
           ?.split(";")
           .map((s: string) => s.trim())
           .filter(Boolean) || [""],
+
+        urls:
+          row["urls"]
+            ?.split(";")
+            .map((s: string) => s.trim())
+            .filter(Boolean) || [],
+
+        urls_musique:
+          row["urls_musique"]
+            ?.split(";")
+            .map((s: string) => s.trim())
+            .filter(Boolean) || [],
 
         /**
          * Boolean field conversion

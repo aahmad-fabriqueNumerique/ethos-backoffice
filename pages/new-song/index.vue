@@ -13,7 +13,7 @@
  *
  * @component NewSongView
  */
-import type { SongCreate } from "@/models/Song";
+
 import {
   Field,
   Form,
@@ -22,6 +22,7 @@ import {
 } from "vee-validate";
 import { useI18n } from "vue-i18n";
 import DialogAddNewEntry from "~/components/DialogAddNewEntry.vue";
+import type { SongCreate } from "~/models/Song";
 
 definePageMeta({
   layout: "home",
@@ -76,6 +77,34 @@ const removeInterprete = (index: number) => {
   interpretesList.value.splice(index, 1);
 };
 
+const urlsList = ref([""]);
+
+/**
+ * Adds a new empty URL field to the list
+ * Called when user clicks the "Add URL" button
+ */
+const addUrl = () => {
+  urlsList.value.push("");
+};
+
+const removeUrl = (index: number) => {
+  urlsList.value.splice(index, 1);
+};
+
+const urls_musiqueList = ref([""]);
+
+/**
+ * Adds a new empty music URL field to the list
+ * Called when user clicks the "Add Music URL" button
+ */
+const addUrlMusique = () => {
+  urls_musiqueList.value.push("");
+};
+
+const removeUrlMusique = (index: number) => {
+  urls_musiqueList.value.splice(index, 1);
+};
+
 /**
  * Form submission handler
  * Processes validated form data and passes it to the submission function
@@ -95,6 +124,8 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
  */
 const handleCancel = () => {
   interpretesList.value = [""]; // Reset to one empty interpreter field
+  urlsList.value = [""]; // Reset to one empty URL field
+  urls_musiqueList.value = [""]; // Reset to one empty Music URL field
   router.replace({ name: "chants" }); // Navigate back to songs list
 };
 
@@ -425,54 +456,106 @@ const newDataType = ref<DataKey | null>(null); // Type of data to add in the dia
       </div>
 
       <!-- URL fields -->
-      <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Web links field (optionnel) -->
-        <span class="flex flex-col gap-y-2">
-          <Field v-slot="{ field, errorMessage }" name="urls">
-            <label for="urls">{{ t("newSong.labels.url") }}</label>
-            <InputText
-              id="urls"
-              fluid
-              v-bind="field"
-              name="urls"
-              aria-label="liens web"
-              :placeholder="t('newSong.placeholders.url')"
-              :invalid="!!errorMessage"
-            />
-            <!-- Error message display -->
-            <Message
-              v-if="errorMessage !== undefined"
-              class="text-xs text-error"
-              severity="error"
-            >
-              {{ t(`songs.errors.${errorMessage}`) }}
-            </Message>
+      <div class="w-full">
+        <h2 class="text-lg mb-2">{{ t("newSong.labels.url") }}</h2>
+        <div
+          v-for="(_, index) in urlsList"
+          :key="index"
+          class="flex items-end gap-2 mb-2"
+        >
+          <Field
+            v-slot="{ field, errorMessage }"
+            :name="`urls[${index}]`"
+            class="flex-1"
+          >
+            <span class="flex flex-col gap-y-2 w-full">
+              <label :for="`urls-${index}`"
+                >{{ t("newSong.labels.url") }} {{ index + 1 }}</label
+              >
+              <InputText
+                :id="`urls-${index}`"
+                fluid
+                v-bind="field"
+                :invalid="!!errorMessage"
+                :placeholder="t('newSong.placeholders.url')"
+              />
+              <!-- Error message display -->
+              <Message
+                v-if="
+                  errorMessage !== undefined &&
+                  field.value &&
+                  field.value.trim() !== ''
+                "
+                class="text-xs text-error"
+                severity="error"
+              >
+                {{ t(`songs.errors.${errorMessage}`) }}
+              </Message>
+            </span>
           </Field>
-        </span>
+          <Button
+            v-if="urlsList.length > 1"
+            type="button"
+            icon="pi pi-times"
+            class="p-button-rounded p-button-danger p-button-sm"
+            @click="removeUrl(index)"
+          />
+        </div>
+        <Button type="button" icon="pi pi-plus" class="my-2" @click="addUrl" />
+      </div>
 
-        <!-- Music URLs field (optionnel) -->
-        <span class="flex flex-col gap-y-2">
-          <Field v-slot="{ field, errorMessage }" name="urls_musique">
-            <label for="urls_musique">{{ t("newSong.labels.musicUrl") }}</label>
-            <InputText
-              id="urls_musique"
-              fluid
-              v-bind="field"
-              name="urls_musique"
-              aria-label="liens musique"
-              :placeholder="t('newSong.placeholders.musicUrl')"
-              :invalid="!!errorMessage"
-            />
-            <!-- Error message display -->
-            <Message
-              v-if="errorMessage !== undefined"
-              class="text-xs text-error"
-              severity="error"
-            >
-              {{ t(`songs.errors.${errorMessage}`) }}
-            </Message>
+      <!-- Music URLs field (optionnel) -->
+      <div class="w-full">
+        <h2 class="text-lg mb-2">{{ t("newSong.labels.musicUrl") }}</h2>
+        <div
+          v-for="(_, index) in urls_musiqueList"
+          :key="index"
+          class="flex items-end gap-2 mb-2"
+        >
+          <Field
+            v-slot="{ field, errorMessage }"
+            :name="`urls_musique[${index}]`"
+            class="flex-1"
+          >
+            <span class="flex flex-col gap-y-2 w-full">
+              <label :for="`urls_musique-${index}`"
+                >{{ t("newSong.labels.url") }} {{ index + 1 }}</label
+              >
+              <InputText
+                :id="`urls_musique-${index}`"
+                fluid
+                v-bind="field"
+                :invalid="!!errorMessage"
+                :placeholder="t('newSong.placeholders.musicUrl')"
+              />
+              <!-- Error message display -->
+              <Message
+                v-if="
+                  errorMessage !== undefined &&
+                  field.value &&
+                  field.value.trim() !== ''
+                "
+                class="text-xs text-error"
+                severity="error"
+              >
+                {{ t(`songs.errors.${errorMessage}`) }}
+              </Message>
+            </span>
           </Field>
-        </span>
+          <Button
+            v-if="urlsList.length > 1"
+            type="button"
+            icon="pi pi-times"
+            class="p-button-rounded p-button-danger p-button-sm"
+            @click="removeUrlMusique(index)"
+          />
+        </div>
+        <Button
+          type="button"
+          icon="pi pi-plus"
+          class="my-2"
+          @click="addUrlMusique"
+        />
       </div>
 
       <!-- Archived status -->
