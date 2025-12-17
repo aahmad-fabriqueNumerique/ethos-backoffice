@@ -32,6 +32,7 @@ import type EventModel from "../../models/EventModel";
 import type { Timestamp } from "firebase-admin/firestore";
 import { validateEventsQuery } from "../utils/validation-schemas/events";
 
+// --- TYPES ---
 /**
  * Standardized event format used for all returned events
  * regardless of their original source
@@ -60,77 +61,26 @@ type FormattedEvent = {
 type AgendaTradEvent = {
   image: {
     filename: string;
-    size: {
-      width: number;
-      height: number;
-    };
-    variants: {
-      filename: string;
-      size: {
-        width: number;
-        height: number;
-      };
-      type: string; // "full" | "thumbnail" for strict union if needed
-    }[];
+    size: { width: number; height: number };
+    variants: { type: string; filename: string; base: string }[];
     base: string;
   };
-  featured: boolean;
-  attendanceMode: number;
-  keywords: {
-    fr: string[];
-  };
-  dateRange: {
-    ar: string;
-    de: string;
-    en: string;
-    it: string;
-    fr: string;
-    es: string;
-  };
-  imageCredits: string | null;
-  originAgenda: {
-    image: string;
-    uid: number;
-    title: string;
-  };
-  description: {
-    fr: string;
-  };
-  longDescription: {
-    fr: string;
-  };
-  type: number[];
-  title: {
-    fr: string;
-  };
-  onlineAccessLink: string | null;
+  keywords: { fr: string[] };
+  description: { fr: string };
+  longDescription: { fr: string };
+  title: { fr: string };
   uid: number;
-  lastTiming: {
-    begin: string; // ISO datetime
-    end: string;
-  };
-  firstTiming: {
-    begin: string;
-    end: string;
-  };
+  lastTiming: { begin: string; end: string };
+  firstTiming: { begin: string; end: string };
   location: {
     address: string;
     city: string;
     latitude: number;
     longitude: number;
     name: string;
-    extId: string | null;
   };
-  slug: string;
-  status: number;
-  nextTiming: {
-    begin: string;
-    end: string;
-  };
-  links?: Array<{
-    link: string;
-    data?: any;
-  }>;
+  links?: Array<{ link: string; data?: any }>;
+  [key: string]: any;
 };
 
 // Module-level shared memory for caching
@@ -165,12 +115,11 @@ async function getCachedFirebaseEvents(
   const firestoreNow = admin.firestore.Timestamp.fromDate(new Date());
 
   // Fetch ALL upcoming events from Firestore (remove the limit to get all events)
-  const firestoreQuery = db
+  const snapshot = await db
     .collection("events")
     .where("dateFin", ">", firestoreNow)
-    .orderBy("dateFin", "asc");
-
-  const snapshot = await firestoreQuery.get();
+    .orderBy("dateFin", "asc")
+    .get();
 
   // Transform Firestore events to standardized format
   const allFirebaseEvents = snapshot.docs.map((doc): FormattedEvent => {
@@ -205,6 +154,7 @@ async function getCachedFirebaseEvents(
   // Update cache
   cachedFirebaseEvents = allFirebaseEvents;
   lastFirebaseFetchTime = now;
+
   console.log(
     `[FIREBASE CACHE] Cache updated with ${allFirebaseEvents.length} events.`
   );
@@ -241,24 +191,16 @@ export default defineEventHandler(async (event) => {
 
   // Parse search query
   const searchTerm = searchValue ? String(searchValue).trim() : undefined;
-
   const cacheDate = Date.now();
 
   // Return cached events if still fresh and no filters applied
   if (cachedEvents && cacheDate - lastFetchTime < TTL_MS && hasNoArguments) {
     console.log("[CACHE] Serving request from cache.");
-    return {
-      success: true,
-      events: cachedEvents,
-      cached: true,
-    };
+    return { success: true, events: cachedEvents, cached: true };
   }
 
-  // Get configuration from runtime config
+  // Config & Init Firebase
   const config = useRuntimeConfig();
-  const openAgendaAPIKey = config.openAgendaAPIKey;
-  const agendaTradUID = config.agendaTradUID;
-  const loCalenDiariUID = config.loCalenDiariUID;
 
   // Initialize Firebase Admin if not already initialized
   if (!getApps().length) {
@@ -313,25 +255,18 @@ export default defineEventHandler(async (event) => {
   }
 
   // Apply geographical filter to Firestore events if coordinates are provided
-  if (long && lat && typeof long === "string" && typeof lat === "string") {
-    const longitude = parseFloat(long);
-    const latitude = parseFloat(lat);
-
-    if (!isNaN(longitude) && !isNaN(latitude)) {
-      events = events.filter((event) => {
-        if (event.latitude === null || event.longitude === null) {
-          return false; // Exclude events without coordinates
-        }
-
-        // Check if event is within the bounding box (±1.35 degrees ≈ 150km)
-        const isWithinLatitude =
-          event.latitude >= latitude - 1.35 &&
-          event.latitude <= latitude + 1.35;
-        const isWithinLongitude =
-          event.longitude >= longitude - 1.35 &&
-          event.longitude <= longitude + 1.35;
-
-        return isWithinLatitude && isWithinLongitude;
+  if (long && lat) {
+    const lng = parseFloat(long as string);
+    const lt = parseFloat(lat as string);
+    if (!isNaN(lng) && !isNaN(lt)) {
+      events = events.filter((ev) => {
+        if (!ev.latitude || !ev.longitude) return false;
+        return (
+          ev.latitude >= lt - 1.35 &&
+          ev.latitude <= lt + 1.35 &&
+          ev.longitude >= lng - 1.35 &&
+          ev.longitude <= lng + 1.35
+        );
       });
     }
   }
@@ -341,46 +276,40 @@ export default defineEventHandler(async (event) => {
 
   // Construct OpenAgenda API URL with filters
   const urlParams = new URLSearchParams({
-    key: openAgendaAPIKey,
+    key: config.openAgendaAPIKey,
     size: maxOpenAgendaItems.toString(),
   });
 
-  // Add relative filters for current and upcoming events
-  urlParams.append("relative[]", "current");
-  urlParams.append("relative[]", "upcoming");
-
-  // Add date range filter to limit events to those starting within 1 month
   const today = new Date();
-  const monthsFromNow = new Date();
-  if (isCalendar) {
-    monthsFromNow.setMonth(today.getMonth() + 4);
-  } else {
-    monthsFromNow.setMonth(today.getMonth() + 1);
-  }
+  const futureDate = new Date();
+  futureDate.setMonth(today.getMonth() + (isCalendar ? 4 : 1));
 
   urlParams.append("timings[gte]", today.toISOString().split("T")[0]);
-  urlParams.append("timings[lte]", monthsFromNow.toISOString().split("T")[0]);
+  urlParams.append("timings[lte]", futureDate.toISOString().split("T")[0]);
 
-  // Add search query if provided
   if (searchTerm) {
     if (searchValueType === "keywords") {
-      // For keyword search, split by comma and add each keyword as a separate parameter
-      const keywords = searchTerm
+      searchTerm
         .split(",")
-        .map((k) => k.trim())
-        .filter((k) => k.length > 0);
-      keywords.forEach((keyword) => {
-        urlParams.append("keyword[]", keyword);
-      });
+        .forEach((k) => urlParams.append("keyword[]", k.trim()));
     } else {
-      // For OpenAgenda API, we'll pass the search term directly
-      // The API handles general search across multiple fields
       urlParams.append("search", searchTerm);
     }
   }
 
   // Specify only the fields we need from OpenAgenda API to optimize response size
-  const requiredFields = [
+  if (long && lat) {
+    const lng = parseFloat(long as string);
+    const lt = parseFloat(lat as string);
+    if (!isNaN(lng) && !isNaN(lt)) {
+      urlParams.append("geo[northEast][lat]", (lt + 1.35).toString());
+      urlParams.append("geo[northEast][lng]", (lng + 1.35).toString());
+      urlParams.append("geo[southWest][lat]", (lt - 1.35).toString());
+      urlParams.append("geo[southWest][lng]", (lng - 1.35).toString());
+    }
+  }
+
+  [
     "uid",
     "title",
     "longDescription",
@@ -391,146 +320,126 @@ export default defineEventHandler(async (event) => {
     "links",
     "keywords",
     "lastTiming",
-  ];
+  ].forEach((f) => urlParams.append("if[]", f));
 
-  requiredFields.forEach((field) => {
-    urlParams.append("if[]", field);
-  });
+  const urlAgendaTrad = `https://api.openagenda.com/v2/agendas/${
+    config.agendaTradUID
+  }/events?${urlParams.toString()}`;
+  const urlLoCalenDiari = `https://api.openagenda.com/v2/agendas/${
+    config.loCalenDiariUID
+  }/events?${urlParams.toString()}`;
 
-  // Add geographical filter if coordinates are provided
-  if (long && lat && typeof long === "string" && typeof lat === "string") {
-    const longitude = parseFloat(long);
-    const latitude = parseFloat(lat);
-
-    if (!isNaN(longitude) && !isNaN(latitude)) {
-      console.log(longitude, latitude);
-      // Use correct OpenAgenda geo filter format (±1.35 degrees ≈ 150km)
-      urlParams.append("geo[northEast][lat]", (latitude + 1.35).toString());
-      urlParams.append("geo[northEast][lng]", (longitude + 1.35).toString());
-      urlParams.append("geo[southWest][lat]", (latitude - 1.35).toString());
-      urlParams.append("geo[southWest][lng]", (longitude - 1.35).toString());
-    }
-  }
-
-  const urlAgendaTrad = `https://api.openagenda.com/v2/agendas/${agendaTradUID}/events?${urlParams.toString()}`;
-  const urlLoCalenDiari = `https://api.openagenda.com/v2/agendas/${loCalenDiariUID}/events?${urlParams.toString()}`;
-
-  /**
-   * Transforms an OpenAgenda event to the standardized format
-   * @param {AgendaTradEvent} event - Raw event from OpenAgenda API
-   * @param {string} prefix - Prefix to add to the event ID to avoid duplicates
-   * @returns {FormattedEvent} Standardized event object
-   */
   function transformToEventCard(event: AgendaTradEvent, prefix: string) {
     const thumbnail = event.image?.variants?.find(
       (v) => v.type === "thumbnail"
     );
-    const image = thumbnail ? `${event.image.base}${thumbnail.filename}` : null;
-
-    // Some keywords are not useful for display, so we can filter them out
-    const keywordsToRemove = ["nivernais"];
-
-    // Extract up to 2 keywords from the event
-    const keywords =
-      event.keywords?.fr
-        ?.filter((keyword) => !keywordsToRemove.includes(keyword))
-        .slice(0, 2) || [];
+    const kws =
+      event.keywords?.fr?.filter((k) => k !== "nivernais").slice(0, 2) || [];
 
     return {
       id: `${prefix}${event.uid}`,
-      title: event.title?.fr || "Untitled Event",
+      title: event.title?.fr || "Sans titre",
       description: event.longDescription?.fr || null,
       organizer: event.description?.fr || "",
       date: event.firstTiming?.begin || "",
       endDate: event.lastTiming?.end || "",
-      image,
+      image: thumbnail ? `${event.image.base}${thumbnail.filename}` : null,
       locationName: event.location?.name,
       city: event.location?.city || "",
-      pays: "", // OpenAgenda API doesn't provide country field in current type definition
+      pays: "",
       latitude: event.location?.latitude ?? null,
       longitude: event.location?.longitude ?? null,
       links: processEventLinks(event.links),
-      keywords,
+      keywords: kws,
     };
   }
 
-  // Fetch events from OpenAgenda API with error handling
-  const data: FormattedEvent[] = [];
+  // --- Retry helper ---
+  // If failed, log and retry. If failed again, throw error.
+  async function fetchWithRetry(url: string) {
+    try {
+      return await $fetch(url, { timeout: 10000 });
+    } catch (err) {
+      console.warn(`[API] Echec 1ere tentative ${url}. Retry immédiat...`);
+      return await $fetch(url, { timeout: 10000 });
+    }
+  }
+
+  // retry + cache protection
+  const openAgendaEvents: FormattedEvent[] = [];
+  let requestFailed = false;
 
   try {
-    console.log("[API] Fetching from AgendaTrad...");
-    const response = (await $fetch(urlAgendaTrad, {
-      timeout: 10000, // 10 second timeout
-    })) as any;
-
-    if (response?.events) {
-      for (const event of response.events) {
-        data.push(transformToEventCard(event, "agendatrad_"));
-      }
-      console.log(
-        `[API] Successfully fetched ${response.events.length} events from AgendaTrad`
+    console.log("[API] Fetch AgendaTrad...");
+    // Using retry helper
+    const res = (await fetchWithRetry(urlAgendaTrad)) as any;
+    if (res?.events) {
+      res.events.forEach((e: any) =>
+        openAgendaEvents.push(transformToEventCard(e, "agendatrad_"))
       );
+      console.log(`[API] AgendaTrad OK: ${res.events.length} events.`);
     }
   } catch (error) {
-    console.error("[API] Failed to fetch from AgendaTrad:", error);
-    // Continue execution - don't let external API failures crash the server
+    console.error("[API] CRITIQUE - AgendaTrad a échoué 2 fois:", error);
+    requestFailed = true;
   }
 
   try {
-    console.log("[API] Fetching from LoCalenDiari...");
-    const responseLoCalenDiari = (await $fetch(urlLoCalenDiari, {
-      timeout: 10000, // 10 second timeout
-    })) as any;
-
-    if (responseLoCalenDiari?.events) {
-      for (const event of responseLoCalenDiari.events) {
-        data.push(
+    console.log("[API] Fetch LoCalenDiari...");
+    // Utilisation du helper avec retry
+    const res = (await fetchWithRetry(urlLoCalenDiari)) as any;
+    if (res?.events) {
+      res.events.forEach((e: any) =>
+        openAgendaEvents.push(
           transformToEventCard(
-            { ...event, description: undefined },
+            { ...e, description: undefined },
             "localendiari_"
           )
-        );
-      }
-      console.log(
-        `[API] Successfully fetched ${responseLoCalenDiari.events.length} events from LoCalenDiari`
+        )
       );
+      console.log(`[API] LoCalenDiari OK: ${res.events.length} events.`);
     }
   } catch (error) {
-    console.error("[API] Failed to fetch from LoCalenDiari:", error);
-    // Continue execution - don't let external API failures crash the server
+    console.error("[API] CRITIQUE - LoCalenDiari a échoué 2 fois:", error);
+    requestFailed = true;
   }
 
-  // Filter out events without title or description from both sources
-  const filteredFirestoreEvents = events.filter(
-    (event) =>
-      event.title &&
-      event.title.trim() !== "" &&
-      event.description &&
-      event.description.trim() !== ""
+  // Nettoyage et Fusion
+  const validFirestore = events.filter(
+    (e) => e.title?.trim() && e.description?.trim()
+  );
+  const validOpenAgenda = openAgendaEvents.filter(
+    (e) => e.title?.trim() && e.description?.trim()
   );
 
-  const filteredOpenAgendaEvents = data.filter(
-    (event) =>
-      event.title &&
-      event.title.trim() !== "" &&
-      event.description &&
-      event.description.trim() !== ""
-  );
-
-  // Combine and sort events from both sources
   const combined = sortArrayByDate(
-    [...filteredFirestoreEvents, ...filteredOpenAgendaEvents],
+    [...validFirestore, ...validOpenAgenda],
     "date",
     true
   );
 
-  // Update cache only when no filters are applied
+  // UPDATE CACHE ?
   if (hasNoArguments) {
-    cachedEvents = combined;
-    lastFetchTime = new Date().getTime();
-    console.log("[API] Cache updated.");
-  } else {
-    console.log("[API] Filters applied, cache not updated.");
+    if (!requestFailed) {
+      // OK ? -> Update cache
+      cachedEvents = combined;
+      lastFetchTime = Date.now();
+      console.log("[CACHE] Mis à jour avec succès.");
+    } else {
+      // Failed -> We keep the cache
+      console.warn("[CACHE] Echec API après retry. Mise à jour annulée.");
+
+      // Fallback
+      if (cachedEvents) {
+        console.log("[CACHE] Fallback sur l'ancien cache.");
+        return {
+          success: true,
+          events: cachedEvents,
+          cached: true,
+          status: "stale",
+        };
+      }
+    }
   }
 
   return {
