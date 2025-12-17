@@ -12,7 +12,7 @@
  * - CSV parsing with automatic delimiter detection
  * - Data validation and sanitization
  * - Batch Firestore operations for performance
- * - Automatic Metadata updates (Regions)
+ * - Automatic Metadata updates (Regions per Country)
  * - Temporary file management with cleanup
  * - Comprehensive error handling and logging
  * - Support for various CSV formats and encodings
@@ -45,7 +45,7 @@
  *
  * @endpoint POST /api/upload-songs
  * @author GitHub Copilot
- * @version 1.1.0
+ * @version 1.2.1
  * @since 2025-01-18
  */
 
@@ -126,7 +126,7 @@ interface ApiResponse {
  * 4. Parse CSV with automatic format detection
  * 5. Validate and transform data into song objects
  * 6. Batch insert into Firestore database
- * 7. Update Metadata (Regions list)
+ * 7. Update Metadata (Regions per Country)
  * 8. Clean up temporary files
  * 9. Return operation results
  *
@@ -302,7 +302,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
       delimiter: delimiter, // Use detected delimiter
       quoteChar: '"', // Standard quote character
       escapeChar: '"', // Escape character for quotes
-      transformHeader: (header: string) => header.trim(), // Clean header names
+      // CORRECTION HERE: Force lowercase headers to avoid case sensitivity issues
+      transformHeader: (header: string) => header.trim().toLowerCase(),
       transform: (value: string) => value.trim(), // Clean cell values
       complete: (results) => {
         console.log(
@@ -387,86 +388,94 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
     await batch.commit();
     console.log(`🎉 Successfully committed ${result.count} songs to database`);
 
-    // Step 7.5: Metadata Management (Regions)
+    // Step 7.5: Metadata Management (Regions per Country)
     console.log("🌍 Processing regions metadata...");
 
     /**
-     * Extract unique regions from the current batch of songs
-     * We filter out empty or undefined regions first
+     * Group regions by country to update specific documents
+     * Structure: Map<CountryLowerCase, Set<RegionLowerCase>>
      */
-    const incomingRegions = [
-      ...new Set(
-        result.songs
-          .map((song) => song.region)
-          .filter((region) => region && region.trim() !== "")
-      ),
-    ];
+    const countryRegionsMap = new Map<string, Set<string>>();
 
-    if (incomingRegions.length > 0) {
-      const metadataCollection = db.collection("metadata");
-
-      // Query specifically for the document with type 'regions-list'
-      const regionsQuery = await metadataCollection
-        .where("type", "==", "regions-list")
-        .limit(1)
-        .get();
-
-      let regionsDocRef;
-      let existingRegions: string[] = [];
-
-      /**
-       * Handle "regions-list" document retrieval or creation
-       * If it doesn't exist, we prepare a new reference
-       */
-      if (regionsQuery.empty) {
-        console.log(
-          "🆕 'regions-list' document not found. Creating new document..."
-        );
-        regionsDocRef = metadataCollection.doc(); // Create new doc reference
-      } else {
-        const doc = regionsQuery.docs[0];
-        regionsDocRef = doc.ref;
-        existingRegions = (doc.data().data as string[]) || [];
-        console.log(
-          `📖 Found existing 'regions-list' with ${existingRegions.length} regions`
-        );
-      }
-
-      /**
-       * Merge and Deduplicate Regions
-       *
-       * Logic:
-       * 1. Combine existing DB regions with new incoming regions
-       * 2. Use Set to remove duplicates
-       * 3. Sort alphabetically for consistency
-       */
-      const updatedRegions = [
-        ...new Set([...existingRegions, ...incomingRegions]),
-      ].sort();
-
-      /**
-       * Update Firestore only if new regions were added
-       * Or if we are creating the document for the first time
-       */
+    result.songs.forEach((song) => {
+      // Validate both country and region exist
       if (
-        updatedRegions.length > existingRegions.length ||
-        regionsQuery.empty
+        song.pays &&
+        song.pays.trim() !== "" &&
+        song.region &&
+        song.region.trim() !== ""
       ) {
-        await regionsDocRef.set(
-          {
-            type: "regions-list",
-            data: updatedRegions,
-          },
-          { merge: true } // Merge to preserve other potential fields
-        );
-        console.log(
-          `✅ Metadata updated: Regions list now contains ${
-            updatedRegions.length
-          } items (added ${updatedRegions.length - existingRegions.length} new)`
-        );
+        // Normalize strictly to lowercase
+        const countryKey = song.pays.trim().toLowerCase();
+        const regionValue = song.region.trim().toLowerCase();
+
+        if (!countryRegionsMap.has(countryKey)) {
+          countryRegionsMap.set(countryKey, new Set());
+        }
+        countryRegionsMap.get(countryKey)?.add(regionValue);
       } else {
-        console.log("✨ No new regions to add to metadata");
+        // LOGGING to understand why some are skipped
+        // console.warn("⚠️ Skipping metadata for song (missing country/region):", { t: song.titre, p: song.pays, r: song.region });
       }
+    });
+
+    if (countryRegionsMap.size > 0) {
+      const regionsCollection = db.collection("regions");
+
+      // Iterate through each country to update its specific document
+      for (const [country, newRegionsSet] of countryRegionsMap) {
+        const docRef = regionsCollection.doc(country);
+        const docSnap = await docRef.get();
+
+        let existingRegions: string[] = [];
+
+        // Check if document exists and retrieve current regions
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          existingRegions = (data?.regions as string[]) || [];
+          console.log(
+            `📖 Found existing document for '${country}' with ${existingRegions.length} regions`
+          );
+        } else {
+          console.log(
+            `🆕 Creating new region document for country: '${country}'`
+          );
+        }
+
+        /**
+         * Merge and Deduplicate Regions
+         * Combine existing regions with new ones, remove duplicates, and sort
+         */
+        const updatedRegions = [
+          ...new Set([...existingRegions, ...newRegionsSet]),
+        ].sort();
+
+        /**
+         * Update Firestore only if new regions were added or doc is new
+         */
+        if (updatedRegions.length > existingRegions.length || !docSnap.exists) {
+          await docRef.set(
+            {
+              country: country, // Store normalized country name
+              regions: updatedRegions, // Store normalized regions list
+            },
+            { merge: true }
+          );
+          console.log(
+            `✅ Updated '${country}': now contains ${
+              updatedRegions.length
+            } regions (added ${
+              updatedRegions.length - existingRegions.length
+            } new)`
+          );
+        } else {
+          console.log(`✨ No changes needed for country '${country}'`);
+        }
+      }
+    } else {
+      console.log(
+        "ℹ️ No valid country/region pairs found in upload. Check if your CSV has 'Pays' and 'Region' columns filled."
+      );
     }
 
     // Return success response
@@ -546,6 +555,7 @@ function processData(data: any[]): ApiResponse {
   const formattedSongs = data
     .filter((row) => {
       // Validate required fields
+      // NOTE: keys are now lowercase due to transformHeader
       const hasTitle = row.titre && row.titre.trim() !== "";
       const hasAuthor = row.auteur && row.auteur.trim() !== "";
 
@@ -570,12 +580,7 @@ function processData(data: any[]): ApiResponse {
 
       /**
        * Transform raw CSV row into structured SongData object
-       *
-       * Transformations applied:
-       * - String trimming and default values
-       * - Array field processing (semicolon-separated values)
-       * - Boolean field conversion
-       * - Empty string handling
+       * Headers are guaranteed lowercase here.
        */
       return {
         // Required fields
@@ -584,11 +589,12 @@ function processData(data: any[]): ApiResponse {
         auteur: row["auteur"] || undefined,
 
         // Basic string fields with fallbacks
-        pays: row["pays"] || undefined,
-        langue: row["langue"] || undefined,
-        compositeur: row["compositeur"] || undefined,
-        paroles: row["paroles"] || undefined,
-        region: row["region"] || undefined,
+        // Added fallbacks for English headers just in case
+        pays: row["pays"] || row["country"] || undefined,
+        langue: row["langue"] || row["language"] || undefined,
+        compositeur: row["compositeur"] || row["composer"] || undefined,
+        paroles: row["paroles"] || row["lyrics"] || undefined,
+        region: row["region"] || row["area"] || undefined,
         album: row["album"] || undefined,
         theme: row["theme"] || undefined,
         contexte_historique: row["contexte_historique"] || undefined,
@@ -599,12 +605,6 @@ function processData(data: any[]): ApiResponse {
          *
          * Converts semicolon-separated strings into arrays:
          * "value1; value2; value3" → ["value1", "value2", "value3"]
-         *
-         * Steps:
-         * 1. Split on semicolon
-         * 2. Trim whitespace from each element
-         * 3. Filter out empty strings
-         * 4. Return array or empty array if no data
          */
         type_de_chanson:
           row["type_de_chanson"]
@@ -631,10 +631,6 @@ function processData(data: any[]): ApiResponse {
 
         /**
          * Boolean field conversion
-         *
-         * Converts string representations to boolean:
-         * "true", "TRUE", "True" → true
-         * "false", "FALSE", "False", "", undefined → false
          */
         archived: row["archived"]?.toLowerCase() === "true",
       };
@@ -655,12 +651,6 @@ function processData(data: any[]): ApiResponse {
 
   /**
    * Return formatted response with processing results
-   *
-   * Includes:
-   * - Success status
-   * - Human-readable message
-   * - Count of processed songs
-   * - Array of processed song objects
    */
   return {
     success: true,

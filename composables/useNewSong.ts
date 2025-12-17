@@ -25,9 +25,7 @@ import {
   getDoc,
   getFirestore,
   updateDoc,
-  query,
-  where,
-  getDocs,
+  setDoc,
 } from "firebase/firestore";
 import { createSlugWithWords } from "~/utils/createSlug";
 
@@ -59,7 +57,7 @@ export const useNewSong = (songId?: string) => {
   const router = useRouter();
   const { showToast } = useNotifsToasts();
   const isLoading = ref(false);
-  const useData = useDataStore(); // Data store for region information
+  const useData = useDataStore();
 
   // References for dropdown data
   const regions = ref<Region[]>([]);
@@ -68,10 +66,7 @@ export const useNewSong = (songId?: string) => {
   const themes = ref<SelectType[]>([]);
   const countries = ref<SelectType[]>([]);
 
-  /**
-   * Zod validation schema for the new song form
-   * Ensures data integrity and provides error messages for form validation
-   */
+  // ... (Schema definitions remain unchanged) ...
   const newSongFormSchema = toTypedSchema(
     z.object({
       titre: z
@@ -95,7 +90,7 @@ export const useNewSong = (songId?: string) => {
             .regex(regexOptionalGeneric, { message: "invalid_song_type" })
         )
         .optional()
-        .default([]), // Default to empty array if no type selected
+        .default([]),
       region: z
         .string({ required_error: "no_region" })
         .regex(regexOptionalGeneric, { message: "invalid_region" }),
@@ -160,89 +155,85 @@ export const useNewSong = (songId?: string) => {
 
   /**
    * Authentication Check Helper
-   *
-   * Verifies that a user is currently authenticated and retrieves a fresh
-   * authentication token for API requests.
    */
   const checkAuth = async (): Promise<string | null> => {
-    // Get Firebase Auth instance
     const auth = getAuth();
     const user = auth.currentUser as User;
 
-    // Check if user is authenticated
     if (!user) {
       console.error("❌ No authenticated user found");
       return null;
     }
 
-    // Get fresh authentication token for API requests
     return await user.getIdToken();
   };
 
   /**
-   * Updates the Regions Metadata List
+   * Updates the Regions Metadata List for a specific Country
    *
-   * Checks if the region used in the song exists in the global metadata.
-   * If not, it adds it to the list to ensure the filter lists remain up to date.
+   * Checks if the region exists in the 'regions' collection for the given country.
+   * If not, adds it to the list.
+   * Ensures everything is stored in lowercase.
    *
-   * Flow: Fetch -> Verify -> Add -> Sort -> Update
-   *
-   * @param {string} regionName - The name of the region to check/add
+   * @param {string} regionName - The name of the region
+   * @param {string} countryName - The name of the country
    */
-  const updateRegionMetadata = async (regionName: string) => {
+  const updateRegionMetadata = async (
+    regionName: string,
+    countryName: string
+  ) => {
     // Basic validation
-    if (!regionName || regionName.trim() === "") return;
+    if (!regionName?.trim() || !countryName?.trim()) return;
 
     try {
-      console.log(`🌍 Checking metadata for region: ${regionName}`);
+      // Normalize to lowercase
+      const regionLower = regionName.trim().toLowerCase();
+      const countryLower = countryName.trim().toLowerCase();
+
+      console.log(
+        `🌍 Checking regions for country: ${countryLower}, region: ${regionLower}`
+      );
       const db = getFirestore();
-      const metadataCollection = collection(db, "metadata");
 
-      // 1. FETCH: Search for the specific 'regions-list' document
-      const q = query(metadataCollection, where("type", "==", "regions-list"));
-      const querySnapshot = await getDocs(q);
+      // Reference to the specific country document in 'regions' collection
+      const docRef = doc(db, "regions", countryLower);
+      const docSnap = await getDoc(docRef);
 
-      if (querySnapshot.empty) {
-        // Case 1: The document does not exist, create it
-        console.log("🆕 Metadata document not found. Creating new one.");
-        await addDoc(metadataCollection, {
-          type: "regions-list",
-          data: [regionName.trim()],
-        });
+      let existingRegions: string[] = [];
+
+      // Fetch existing data if document exists
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        existingRegions = (data.regions as string[]) || [];
       } else {
-        // Case 2: The document exists, check content
-        const docSnapshot = querySnapshot.docs[0];
-        const docRef = docSnapshot.ref;
-        const currentData = docSnapshot.data();
+        console.log(`🆕 Creating new region document for '${countryLower}'`);
+      }
 
-        // Securely retrieve the array
-        const existingRegions: string[] = Array.isArray(currentData.data)
-          ? [...currentData.data]
-          : [];
-
-        // 2. VERIFY: Does the region already exist?
-        // Case-insensitive check to avoid duplicates like "Paris" vs "paris"
-        const regionExists = existingRegions.some(
-          (r) => r.trim().toLowerCase() === regionName.trim().toLowerCase()
+      // Check if region already exists (in lowercase)
+      if (!existingRegions.includes(regionLower)) {
+        console.log(
+          `➕ Region "${regionLower}" missing in ${countryLower}. Adding...`
         );
 
-        if (!regionExists) {
-          console.log(`➕ Region "${regionName}" missing. Adding to list...`);
+        // Add and sort
+        existingRegions.push(regionLower);
+        existingRegions.sort(); // Lexical sort works fine for lowercase
 
-          // 3. ADD: Push the new region
-          existingRegions.push(regionName.trim());
-
-          // 4. SORT: Alphabetical sort to keep the UI clean
-          existingRegions.sort((a, b) => a.localeCompare(b));
-
-          // 5. UPDATE: Update the document
-          await updateDoc(docRef, {
-            data: existingRegions,
-          });
-          console.log("✅ Metadata updated successfully.");
-        } else {
-          console.log(`👌 Region "${regionName}" already exists in metadata.`);
-        }
+        // Set/Update the document
+        // Uses setDoc with merge to create if not exists or update if exists
+        await setDoc(
+          docRef,
+          {
+            country: countryLower,
+            regions: existingRegions,
+          },
+          { merge: true }
+        );
+        console.log("✅ Region metadata updated successfully.");
+      } else {
+        console.log(
+          `👌 Region "${regionLower}" already exists in ${countryLower}.`
+        );
       }
     } catch (error) {
       console.error("❌ Error updating region metadata:", error);
@@ -251,67 +242,39 @@ export const useNewSong = (songId?: string) => {
 
   /**
    * Prepares data for Firestore storage
-   *
-   * Transforms form data into a format compatible with Firestore:
-   * - Removes null/undefined values
-   * - Handles special data types
-   * - Ensures proper structure for database storage
-   *
-   * @param {Record<string, unknown>} data - The form data to sanitize
-   * @returns {Promise<Record<string, unknown>>} Cleaned data ready for storage
+   * ... (sanitizeFirestoreData remains unchanged)
    */
   const sanitizeFirestoreData = async (
     data: Record<string, unknown>
   ): Promise<Record<string, unknown>> => {
     const result: Record<string, unknown> = {};
 
-    // 1. First, process all properties
     for (const [key, value] of Object.entries(data)) {
       if (key === "archived") {
         result[key] = value === undefined ? false : true;
-      }
-      // Skip undefined values completely
-      if (value === undefined) {
+      } else if (value === undefined) {
         continue;
-      }
-      // For arrays, filter out empty elements
-      else if (Array.isArray(value)) {
+      } else if (Array.isArray(value)) {
         const filteredArray = value.filter(
           (item) => item !== undefined && item !== ""
         );
-        // Only add non-empty arrays
         if (filteredArray.length > 0) {
           result[key] = filteredArray;
         }
-      }
-      // For strings, only add if not empty after trimming
-      else if (typeof value === "string") {
+      } else if (typeof value === "string") {
         const trimmedValue = value.trim();
         if (trimmedValue !== "") {
           result[key] = trimmedValue;
         }
-      }
-      // Keep other values as is (numbers, booleans, etc)
-      else {
+      } else {
         result[key] = value;
       }
     }
-
     return result;
   };
 
   /**
    * Processes and submits the new song form
-   *
-   * Workflow:
-   * 1. Sets loading state
-   * 2. Sanitizes input data for database storage
-   * 3. Writes the record to Firestore
-   * 4. Updates Metadata (Regions) if necessary
-   * 5. Navigates to the songs listing on success
-   *
-   * @param {SongCreate} formValues - The validated form data
-   * @returns {Promise<void>}
    */
   const onSubmit = async (formValues: SongCreate): Promise<void> => {
     console.log("Form submitted with values:", formValues);
@@ -326,12 +289,10 @@ export const useNewSong = (songId?: string) => {
       return;
     }
 
-    // Get fresh authentication token
     const token = await user.getIdToken();
     const values = await sanitizeFirestoreData(
       formValues as unknown as Record<string, unknown>
     );
-    // Create progressive slug with all character variations for precise search
     const slug = createSlugWithWords(formValues.titre);
 
     try {
@@ -341,9 +302,14 @@ export const useNewSong = (songId?: string) => {
       // 1. Add the song document
       const docRef = await addDoc(songRef, { ...values, slug });
 
-      // 2. Update region metadata if a region is specified
-      if (values.region && typeof values.region === "string") {
-        await updateRegionMetadata(values.region);
+      // 2. Update region metadata if both region and country are specified
+      if (
+        values.region &&
+        typeof values.region === "string" &&
+        values.pays &&
+        typeof values.pays === "string"
+      ) {
+        await updateRegionMetadata(values.region, values.pays);
       }
 
       // 3. Send notification
@@ -354,7 +320,7 @@ export const useNewSong = (songId?: string) => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          id: docRef.id, // Use the new document ID
+          id: docRef.id,
           message: `${values.titre}\n${t("updateSong.updateMessage")}`,
           type: t("data.notifsTypes.song"),
         }),
@@ -363,17 +329,15 @@ export const useNewSong = (songId?: string) => {
       const response = await notificationResponse.json();
       showToast("song", response.successCount);
 
-      // Force cache clear to ensure new regions appear in the store
-      // NOTE: Ensure 'clearAllCache' is available in your scope or imported
       if (typeof clearAllCache === "function") {
         clearAllCache();
       }
 
-      router.replace("/chants"); // Redirect to the songs page
+      router.replace("/chants");
     } catch (error) {
       console.error("Error creating song:", error);
     } finally {
-      isLoading.value = false; // Reset loading state when complete
+      isLoading.value = false;
     }
   };
 
@@ -384,7 +348,7 @@ export const useNewSong = (songId?: string) => {
     router.replace("/chants");
   };
 
-  // Returns a song identified by its id from Firestore
+  // ... (getSongDetails remains unchanged) ...
   const getSongDetails = async (songId: string): Promise<Song | null> => {
     isLoading.value = true;
     try {
@@ -428,7 +392,6 @@ export const useNewSong = (songId?: string) => {
       let values = await sanitizeFirestoreData(
         formValues as unknown as Record<string, unknown>
       );
-      // Create progressive slug
       const slug = createSlugWithWords(values.titre as string);
 
       values = { ...values, slug };
@@ -437,7 +400,6 @@ export const useNewSong = (songId?: string) => {
         const db = getFirestore();
         const songRef = doc(db, "chants", songId);
 
-        // Prepare the object to update
         const updatePayload: Record<string, any> = {};
         for (const key in values) {
           updatePayload[key] =
@@ -449,14 +411,18 @@ export const useNewSong = (songId?: string) => {
         // 1. Update the song document
         await updateDoc(songRef, updatePayload);
 
-        // 2. Update region metadata if a region is specified
-        if (values.region && typeof values.region === "string") {
-          await updateRegionMetadata(values.region);
+        // 2. Update region metadata if region and country are specified
+        if (
+          values.region &&
+          typeof values.region === "string" &&
+          values.pays &&
+          typeof values.pays === "string"
+        ) {
+          await updateRegionMetadata(values.region, values.pays);
         }
 
         console.log("✅ Song updated successfully");
 
-        // Force cache clear to ensure new regions appear in the store
         if (typeof clearAllCache === "function") {
           clearAllCache();
         }
@@ -473,8 +439,7 @@ export const useNewSong = (songId?: string) => {
   };
 
   /**
-   * Initializes all reference data needed by the form
-   * Loads data for all dropdown/select controls
+   * Initializes all reference data
    */
   onMounted(() => {
     regions.value = useData.getData("regions") as Region[];
