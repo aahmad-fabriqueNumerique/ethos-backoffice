@@ -12,6 +12,7 @@
  * - CSV parsing with automatic delimiter detection
  * - Data validation and sanitization
  * - Batch Firestore operations for performance
+ * - Automatic Metadata updates (Regions)
  * - Temporary file management with cleanup
  * - Comprehensive error handling and logging
  * - Support for various CSV formats and encodings
@@ -25,8 +26,8 @@
  * Usage:
  * POST /api/upload-songs
  * Headers:
- *   - Authorization: Bearer <firebase-id-token>
- *   - x-filename: <optional-filename.csv>
+ * - Authorization: Bearer <firebase-id-token>
+ * - x-filename: <optional-filename.csv>
  * Body: multipart/form-data with "file" field containing CSV
  *
  * Expected CSV Format:
@@ -36,15 +37,15 @@
  *
  * Response:
  * {
- *   "success": true,
- *   "message": "X songs imported successfully",
- *   "count": X,
- *   "songs": [...] // Array of processed song objects
+ * "success": true,
+ * "message": "X songs imported successfully",
+ * "count": X,
+ * "songs": [...] // Array of processed song objects
  * }
  *
  * @endpoint POST /api/upload-songs
  * @author GitHub Copilot
- * @version 1.0.0
+ * @version 1.1.0
  * @since 2025-01-18
  */
 
@@ -125,8 +126,9 @@ interface ApiResponse {
  * 4. Parse CSV with automatic format detection
  * 5. Validate and transform data into song objects
  * 6. Batch insert into Firestore database
- * 7. Clean up temporary files
- * 8. Return operation results
+ * 7. Update Metadata (Regions list)
+ * 8. Clean up temporary files
+ * 9. Return operation results
  *
  * @param {H3Event} event - Nuxt H3 event object containing request data
  * @returns {Promise<ApiResponse>} Promise resolving to operation results
@@ -385,6 +387,88 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
     await batch.commit();
     console.log(`🎉 Successfully committed ${result.count} songs to database`);
 
+    // Step 7.5: Metadata Management (Regions)
+    console.log("🌍 Processing regions metadata...");
+
+    /**
+     * Extract unique regions from the current batch of songs
+     * We filter out empty or undefined regions first
+     */
+    const incomingRegions = [
+      ...new Set(
+        result.songs
+          .map((song) => song.region)
+          .filter((region) => region && region.trim() !== "")
+      ),
+    ];
+
+    if (incomingRegions.length > 0) {
+      const metadataCollection = db.collection("metadata");
+
+      // Query specifically for the document with type 'regions-list'
+      const regionsQuery = await metadataCollection
+        .where("type", "==", "regions-list")
+        .limit(1)
+        .get();
+
+      let regionsDocRef;
+      let existingRegions: string[] = [];
+
+      /**
+       * Handle "regions-list" document retrieval or creation
+       * If it doesn't exist, we prepare a new reference
+       */
+      if (regionsQuery.empty) {
+        console.log(
+          "🆕 'regions-list' document not found. Creating new document..."
+        );
+        regionsDocRef = metadataCollection.doc(); // Create new doc reference
+      } else {
+        const doc = regionsQuery.docs[0];
+        regionsDocRef = doc.ref;
+        existingRegions = (doc.data().data as string[]) || [];
+        console.log(
+          `📖 Found existing 'regions-list' with ${existingRegions.length} regions`
+        );
+      }
+
+      /**
+       * Merge and Deduplicate Regions
+       *
+       * Logic:
+       * 1. Combine existing DB regions with new incoming regions
+       * 2. Use Set to remove duplicates
+       * 3. Sort alphabetically for consistency
+       */
+      const updatedRegions = [
+        ...new Set([...existingRegions, ...incomingRegions]),
+      ].sort();
+
+      /**
+       * Update Firestore only if new regions were added
+       * Or if we are creating the document for the first time
+       */
+      if (
+        updatedRegions.length > existingRegions.length ||
+        regionsQuery.empty
+      ) {
+        await regionsDocRef.set(
+          {
+            type: "regions-list",
+            data: updatedRegions,
+          },
+          { merge: true } // Merge to preserve other potential fields
+        );
+        console.log(
+          `✅ Metadata updated: Regions list now contains ${
+            updatedRegions.length
+          } items (added ${updatedRegions.length - existingRegions.length} new)`
+        );
+      } else {
+        console.log("✨ No new regions to add to metadata");
+      }
+    }
+
     // Return success response
     return result;
   } catch (error: any) {
@@ -436,8 +520,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
  * @example
  * ```typescript
  * const csvData = [
- *   { titre: "Song 1", auteur: "Artist 1", interpretes: "Singer A; Singer B" },
- *   { titre: "", auteur: "Artist 2" }, // Will be filtered out
+ * { titre: "Song 1", auteur: "Artist 1", interpretes: "Singer A; Singer B" },
+ * { titre: "", auteur: "Artist 2" }, // Will be filtered out
  * ];
  * const result = processData(csvData);
  * // Returns: { success: true, count: 1, songs: [...], message: "..." }
