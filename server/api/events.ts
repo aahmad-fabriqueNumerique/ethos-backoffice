@@ -2,8 +2,8 @@
  * Events API Endpoint
  *
  * This endpoint aggregates event data from two sources:
- *  1. Firebase Firestore database (internal events)
- *  2. OpenAgenda API (external events)
+ * 1. Firebase Firestore database (internal events)
+ * 2. OpenAgenda API (external events)
  *
  * Data is cached for 5 minutes to optimize performance and reduce API calls.
  * Firebase events are cached separately for 45 minutes to reduce Firestore load.
@@ -241,7 +241,6 @@ export default defineEventHandler(async (event) => {
 
   // Parse search query
   const searchTerm = searchValue ? String(searchValue).trim() : undefined;
-
   const cacheDate = Date.now();
 
   // Return cached events if still fresh and no filters applied
@@ -277,67 +276,77 @@ export default defineEventHandler(async (event) => {
   // Get all Firebase events with 1-hour caching
   const allFirebaseEvents = await getCachedFirebaseEvents(db);
 
-  // Apply filters to Firebase events based on request parameters
-  let events = allFirebaseEvents.slice(); // Create a copy to avoid modifying cached data
+  /**
+   * Helper function to apply search and geographical filters to an event list.
+   * This is used for both the fresh Firebase data and the fallback cached data.
+   */
+  function filterEventsList(list: FormattedEvent[]) {
+    let result = list;
 
-  // Apply search filter to Firestore events if search term is provided
-  if (searchTerm) {
-    const searchLower = searchTerm.toLowerCase();
-    events = events.filter((event) => {
-      switch (searchValueType) {
-        case "city":
-          return event.city?.toLowerCase().includes(searchLower);
-        case "country":
-          return event.pays?.toLowerCase().includes(searchLower);
-        case "keywords": {
-          // Split keywords by comma and check if any of the event's keywords match any of the search keywords
-          const searchKeywords = searchTerm
-            .split(",")
-            .map((k) => k.trim().toLowerCase())
-            .filter((k) => k.length > 0);
-          return searchKeywords.some((searchKeyword) =>
-            event.keywords.some((eventKeyword) =>
-              eventKeyword.toLowerCase().includes(searchKeyword)
-            )
-          );
+    // Apply search filter if search term is provided
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      result = result.filter((event) => {
+        switch (searchValueType) {
+          case "city":
+            return event.city?.toLowerCase().includes(searchLower);
+          case "country":
+            return event.pays?.toLowerCase().includes(searchLower);
+          case "keywords": {
+            // Split keywords by comma and check if any of the event's keywords match any of the search keywords
+            const searchKeywords = searchTerm
+              .split(",")
+              .map((k) => k.trim().toLowerCase())
+              .filter((k) => k.length > 0);
+            return searchKeywords.some((searchKeyword) =>
+              event.keywords.some((eventKeyword) =>
+                eventKeyword.toLowerCase().includes(searchKeyword)
+              )
+            );
+          }
+          case "name":
+          default:
+            return (
+              event.title?.toLowerCase().includes(searchLower) ||
+              event.description?.toLowerCase().includes(searchLower) ||
+              event.locationName?.toLowerCase().includes(searchLower)
+            );
         }
-        case "name":
-        default:
-          return (
-            event.title?.toLowerCase().includes(searchLower) ||
-            event.description?.toLowerCase().includes(searchLower) ||
-            event.locationName?.toLowerCase().includes(searchLower)
-          );
-      }
-    });
-  }
-
-  // Apply geographical filter to Firestore events if coordinates are provided
-  if (long && lat && typeof long === "string" && typeof lat === "string") {
-    const longitude = parseFloat(long);
-    const latitude = parseFloat(lat);
-
-    if (!isNaN(longitude) && !isNaN(latitude)) {
-      events = events.filter((event) => {
-        if (event.latitude === null || event.longitude === null) {
-          return false; // Exclude events without coordinates
-        }
-
-        // Check if event is within the bounding box (±1.35 degrees ≈ 150km)
-        const isWithinLatitude =
-          event.latitude >= latitude - 1.35 &&
-          event.latitude <= latitude + 1.35;
-        const isWithinLongitude =
-          event.longitude >= longitude - 1.35 &&
-          event.longitude <= longitude + 1.35;
-
-        return isWithinLatitude && isWithinLongitude;
       });
     }
+
+    // Apply geographical filter if coordinates are provided
+    if (long && lat && typeof long === "string" && typeof lat === "string") {
+      const longitude = parseFloat(long);
+      const latitude = parseFloat(lat);
+
+      if (!isNaN(longitude) && !isNaN(latitude)) {
+        result = result.filter((event) => {
+          if (event.latitude === null || event.longitude === null) {
+            return false; // Exclude events without coordinates
+          }
+
+          // Check if event is within the bounding box (±1.35 degrees ≈ 150km)
+          const isWithinLatitude =
+            event.latitude >= latitude - 1.35 &&
+            event.latitude <= latitude + 1.35;
+          const isWithinLongitude =
+            event.longitude >= longitude - 1.35 &&
+            event.longitude <= longitude + 1.35;
+
+          return isWithinLatitude && isWithinLongitude;
+        });
+      }
+    }
+
+    return result;
   }
 
-  // Apply the maxFirestoreItems limit after filtering
-  events = events.slice(0, maxFirestoreItems);
+  // Apply filters to Firebase events (creating a copy to avoid modifying cached data)
+  // And apply the maxFirestoreItems limit after filtering
+  const filteredFirestoreEvents = filterEventsList(
+    allFirebaseEvents.slice()
+  ).slice(0, maxFirestoreItems);
 
   // Construct OpenAgenda API URL with filters
   const urlParams = new URLSearchParams({
@@ -374,7 +383,6 @@ export default defineEventHandler(async (event) => {
       });
     } else {
       // For OpenAgenda API, we'll pass the search term directly
-      // The API handles general search across multiple fields
       urlParams.append("search", searchTerm);
     }
   }
@@ -403,7 +411,6 @@ export default defineEventHandler(async (event) => {
     const latitude = parseFloat(lat);
 
     if (!isNaN(longitude) && !isNaN(latitude)) {
-      console.log(longitude, latitude);
       // Use correct OpenAgenda geo filter format (±1.35 degrees ≈ 150km)
       urlParams.append("geo[northEast][lat]", (latitude + 1.35).toString());
       urlParams.append("geo[northEast][lng]", (longitude + 1.35).toString());
@@ -454,18 +461,30 @@ export default defineEventHandler(async (event) => {
     };
   }
 
+  /**
+   * Helper function to fetch data with a single retry mechanism.
+   * If the first request fails (timeout or 500), it retries immediately.
+   */
+  async function fetchWithRetry(url: string) {
+    try {
+      return await $fetch(url, { timeout: 10000 });
+    } catch (err) {
+      console.warn(`[API] First attempt failed for ${url}. Retrying...`);
+      return await $fetch(url, { timeout: 10000 });
+    }
+  }
+
   // Fetch events from OpenAgenda API with error handling
-  const data: FormattedEvent[] = [];
+  const openAgendaEvents: FormattedEvent[] = [];
+  let requestFailed = false;
 
   try {
     console.log("[API] Fetching from AgendaTrad...");
-    const response = (await $fetch(urlAgendaTrad, {
-      timeout: 10000, // 10 second timeout
-    })) as any;
+    const response = (await fetchWithRetry(urlAgendaTrad)) as any;
 
     if (response?.events) {
       for (const event of response.events) {
-        data.push(transformToEventCard(event, "agendatrad_"));
+        openAgendaEvents.push(transformToEventCard(event, "agendatrad_"));
       }
       console.log(
         `[API] Successfully fetched ${response.events.length} events from AgendaTrad`
@@ -473,18 +492,16 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error("[API] Failed to fetch from AgendaTrad:", error);
-    // Continue execution - don't let external API failures crash the server
+    requestFailed = true;
   }
 
   try {
     console.log("[API] Fetching from LoCalenDiari...");
-    const responseLoCalenDiari = (await $fetch(urlLoCalenDiari, {
-      timeout: 10000, // 10 second timeout
-    })) as any;
+    const responseLoCalenDiari = (await fetchWithRetry(urlLoCalenDiari)) as any;
 
     if (responseLoCalenDiari?.events) {
       for (const event of responseLoCalenDiari.events) {
-        data.push(
+        openAgendaEvents.push(
           transformToEventCard(
             { ...event, description: undefined },
             "localendiari_"
@@ -497,11 +514,11 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error("[API] Failed to fetch from LoCalenDiari:", error);
-    // Continue execution - don't let external API failures crash the server
+    requestFailed = true;
   }
 
-  // Filter out events without title or description from both sources
-  const filteredFirestoreEvents = events.filter(
+  // Filter out events without title or description from OpenAgenda
+  const filteredOpenAgendaEvents = openAgendaEvents.filter(
     (event) =>
       event.title &&
       event.title.trim() !== "" &&
@@ -509,28 +526,48 @@ export default defineEventHandler(async (event) => {
       event.description.trim() !== ""
   );
 
-  const filteredOpenAgendaEvents = data.filter(
-    (event) =>
-      event.title &&
-      event.title.trim() !== "" &&
-      event.description &&
-      event.description.trim() !== ""
-  );
-
-  // Combine and sort events from both sources
+  // Combine and sort events from both sources (Live Data)
   const combined = sortArrayByDate(
     [...filteredFirestoreEvents, ...filteredOpenAgendaEvents],
     "date",
     true
   );
 
-  // Update cache only when no filters are applied
-  if (hasNoArguments) {
-    cachedEvents = combined;
-    lastFetchTime = new Date().getTime();
-    console.log("[API] Cache updated.");
+  // Fallback Logic:
+  // If the API requests failed, we should try to serve the stale cache if available,
+  // applying the same filters locally that would have been applied by the API.
+  if (requestFailed) {
+    console.warn(
+      "[API] Errors detected during fetch. Skipping cache update to preserve data."
+    );
+
+    if (cachedEvents) {
+      console.log(
+        "[CACHE] Fallback: Serving filtered events from global cache due to API failure."
+      );
+
+      // Apply the same filters to the global cache that we applied to fresh data
+      const fallbackEvents = filterEventsList(cachedEvents);
+
+      return {
+        events: sortArrayByDate(fallbackEvents, "date", true),
+        cached: true,
+        status: "stale-fallback",
+      };
+    } else {
+      console.error(
+        "[CACHE] No cache available for fallback. Returning partial data."
+      );
+    }
   } else {
-    console.log("[API] Filters applied, cache not updated.");
+    // If no errors occurred and no filters are applied, update the global cache
+    if (hasNoArguments) {
+      cachedEvents = combined;
+      lastFetchTime = new Date().getTime();
+      console.log("[API] Cache updated successfully.");
+    } else {
+      console.log("[API] Filters applied, cache not updated.");
+    }
   }
 
   return {

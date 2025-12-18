@@ -18,11 +18,14 @@ import { z } from "zod";
 import type SelectType from "~/models/SelectType";
 import { getAuth, type User } from "firebase/auth";
 import {
+  collection,
+  addDoc,
   deleteField,
   doc,
   getDoc,
   getFirestore,
   updateDoc,
+  setDoc,
 } from "firebase/firestore";
 import { createSlugWithWords } from "~/utils/createSlug";
 
@@ -49,22 +52,21 @@ export type NewSongReturn = {
  *
  * @returns {Object} Form controls, validation schema, and reference data for song creation
  */
-
 export const useNewSong = (songId?: string) => {
   const { t } = useI18n();
   const router = useRouter();
   const { showToast } = useNotifsToasts();
   const isLoading = ref(false);
-  const useData = useDataStore(); // Data store for region information
+  const useData = useDataStore();
+
+  // References for dropdown data
   const regions = ref<Region[]>([]);
   const languages = ref<SelectType[]>([]);
-  const songTypes = ref<SelectType[]>([]); // Types of songs, if needed in the future
-  const themes = ref<SelectType[]>([]); // Themes for songs, if needed in the future
-  const countries = ref<SelectType[]>([]); // Countries for songs, if needed in the future
-  /**
-   * Zod validation schema for the new song form
-   * Ensures data integrity and provides error messages for form validation
-   */
+  const songTypes = ref<SelectType[]>([]);
+  const themes = ref<SelectType[]>([]);
+  const countries = ref<SelectType[]>([]);
+
+  // ... (Schema definitions remain unchanged) ...
   const newSongFormSchema = toTypedSchema(
     z.object({
       titre: z
@@ -88,7 +90,7 @@ export const useNewSong = (songId?: string) => {
             .regex(regexOptionalGeneric, { message: "invalid_song_type" })
         )
         .optional()
-        .default([]), // Tableau vide par défaut si aucun type n'est sélectionné
+        .default([]),
       region: z
         .string({ required_error: "no_region" })
         .regex(regexOptionalGeneric, { message: "invalid_region" }),
@@ -153,105 +155,126 @@ export const useNewSong = (songId?: string) => {
 
   /**
    * Authentication Check Helper
-   *
-   * Verifies that a user is currently authenticated and retrieves a fresh
-   * authentication token for API requests. This ensures security and prevents
-   * unauthorized operations.
-   *
-   * @async
-   * @function checkAuth
-   * @returns {Promise<string | null>} Fresh auth token or null if not authenticated
-   *
-   * @example
-   * ```typescript
-   * const token = await checkAuth();
-   * if (token) {
-   *   // Proceed with authenticated operation
-   * } else {
-   *   // Handle unauthenticated user
-   * }
-   * ```
    */
   const checkAuth = async (): Promise<string | null> => {
-    // Get Firebase Auth instance
     const auth = getAuth();
     const user = auth.currentUser as User;
 
-    // Check if user is authenticated
     if (!user) {
       console.error("❌ No authenticated user found");
       return null;
     }
 
-    console.log("🔐 User authenticated, getting fresh token");
-
-    // Get fresh authentication token for API requests
     return await user.getIdToken();
   };
 
   /**
+   * Updates the Regions Metadata List for a specific Country
+   *
+   * Checks if the region exists in the 'regions' collection for the given country.
+   * If not, adds it to the list.
+   * Ensures everything is stored in lowercase.
+   *
+   * @param {string} regionName - The name of the region
+   * @param {string} countryName - The name of the country
+   */
+  const updateRegionMetadata = async (
+    regionName: string,
+    countryName: string
+  ) => {
+    // Basic validation
+    if (!regionName?.trim() || !countryName?.trim()) return;
+
+    try {
+      // Normalize to lowercase
+      const regionLower = regionName.trim().toLowerCase();
+      const countryLower = countryName.trim().toLowerCase();
+
+      console.log(
+        `🌍 Checking regions for country: ${countryLower}, region: ${regionLower}`
+      );
+      const db = getFirestore();
+
+      // Reference to the specific country document in 'regions' collection
+      const docRef = doc(db, "regions", countryLower);
+      const docSnap = await getDoc(docRef);
+
+      let existingRegions: string[] = [];
+
+      // Fetch existing data if document exists
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        existingRegions = (data.regions as string[]) || [];
+      } else {
+        console.log(`🆕 Creating new region document for '${countryLower}'`);
+      }
+
+      // Check if region already exists (in lowercase)
+      if (!existingRegions.includes(regionLower)) {
+        console.log(
+          `➕ Region "${regionLower}" missing in ${countryLower}. Adding...`
+        );
+
+        // Add and sort
+        existingRegions.push(regionLower);
+        existingRegions.sort(); // Lexical sort works fine for lowercase
+
+        // Set/Update the document
+        // Uses setDoc with merge to create if not exists or update if exists
+        await setDoc(
+          docRef,
+          {
+            country: countryLower,
+            regions: existingRegions,
+          },
+          { merge: true }
+        );
+        console.log("✅ Region metadata updated successfully.");
+      } else {
+        console.log(
+          `👌 Region "${regionLower}" already exists in ${countryLower}.`
+        );
+      }
+    } catch (error) {
+      console.error("❌ Error updating region metadata:", error);
+    }
+  };
+
+  /**
    * Prepares data for Firestore storage
-   *
-   * Transforms form data into a format compatible with Firestore:
-   * - Removes null/undefined values
-   * - Handles special data types
-   * - Ensures proper structure for database storage
-   *
-   * @param {Record<string, unknown>} data - The form data to sanitize
-   * @returns {Promise<Record<string, unknown>>} Cleaned data ready for storage
+   * ... (sanitizeFirestoreData remains unchanged)
    */
   const sanitizeFirestoreData = async (
     data: Record<string, unknown>
   ): Promise<Record<string, unknown>> => {
     const result: Record<string, unknown> = {};
 
-    // 1. First, process all properties
     for (const [key, value] of Object.entries(data)) {
       if (key === "archived") {
         result[key] = value === undefined ? false : true;
-      }
-      // Skip undefined values completely
-      if (value === undefined) {
+      } else if (value === undefined) {
         continue;
-      }
-      // For arrays, filter out empty elements
-      else if (Array.isArray(value)) {
+      } else if (Array.isArray(value)) {
         const filteredArray = value.filter(
           (item) => item !== undefined && item !== ""
         );
-        // Only add non-empty arrays
         if (filteredArray.length > 0) {
           result[key] = filteredArray;
         }
-      }
-      // For strings, only add if not empty after trimming
-      else if (typeof value === "string") {
+      } else if (typeof value === "string") {
         const trimmedValue = value.trim();
         if (trimmedValue !== "") {
           result[key] = trimmedValue;
         }
-      }
-      // Keep other values as is (numbers, booleans, etc)
-      else {
+      } else {
         result[key] = value;
       }
     }
-
     return result;
   };
 
   /**
    * Processes and submits the new song form
-   *
-   * Workflow:
-   * 1. Sets loading state
-   * 2. Sanitizes input data for database storage
-   * 3. Writes the record to Firestore
-   * 4. Navigates to the songs listing on success
-   * 5. Handles errors and resets loading state
-   *
-   * @param {SongCreate} formValues - The validated form data
-   * @returns {Promise<void>}
    */
   const onSubmit = async (formValues: SongCreate): Promise<void> => {
     console.log("Form submitted with values:", formValues);
@@ -266,21 +289,30 @@ export const useNewSong = (songId?: string) => {
       return;
     }
 
-    // Get fresh authentication token
     const token = await user.getIdToken();
     const values = await sanitizeFirestoreData(
       formValues as unknown as Record<string, unknown>
     );
-    // Create progressive slug with all character variations for precise search
     const slug = createSlugWithWords(formValues.titre);
 
     try {
-      const { getFirestore, collection, addDoc } = await import(
-        "firebase/firestore"
-      );
       const db = getFirestore();
       const songRef = collection(db, "chants");
-      await addDoc(songRef, { ...values, slug });
+
+      // 1. Add the song document
+      const docRef = await addDoc(songRef, { ...values, slug });
+
+      // 2. Update region metadata if both region and country are specified
+      if (
+        values.region &&
+        typeof values.region === "string" &&
+        values.pays &&
+        typeof values.pays === "string"
+      ) {
+        await updateRegionMetadata(values.region, values.pays);
+      }
+
+      // 3. Send notification
       const notificationResponse = await fetch("/api/notifs", {
         method: "POST",
         headers: {
@@ -288,7 +320,7 @@ export const useNewSong = (songId?: string) => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          id: values.id,
+          id: docRef.id,
           message: `${values.titre}\n${t("updateSong.updateMessage")}`,
           type: t("data.notifsTypes.song"),
         }),
@@ -296,56 +328,48 @@ export const useNewSong = (songId?: string) => {
 
       const response = await notificationResponse.json();
       showToast("song", response.successCount);
-      router.replace("/chants"); // Redirect to the songs page after successful creation
+
+      if (typeof clearAllCache === "function") {
+        clearAllCache();
+      }
+
+      router.replace("/chants");
     } catch (error) {
       console.error("Error creating song:", error);
-      // Handle error appropriately, e.g., show a notification or alert
     } finally {
-      isLoading.value = false; // Reset loading state when complete
+      isLoading.value = false;
     }
   };
 
   /**
    * Cancels the song creation process
-   *
-   * Discards any form data and returns to the songs listing page.
-   * Used as the handler for cancel/back buttons.
    */
   const onCancel = () => {
-    // Navigate back to the songs list when canceling
     router.replace("/chants");
   };
 
-  // Returns a song identified by its id from Firestore
+  // ... (getSongDetails remains unchanged) ...
   const getSongDetails = async (songId: string): Promise<Song | null> => {
     isLoading.value = true;
     try {
-      // Step 1: Verify user authentication
       await checkAuth();
 
       console.log("🔍 Fetching song details for ID:", songId);
-
-      // Step 2: Create Firestore references and fetch data
       const db = getFirestore();
       const songRef = doc(db, "chants", songId);
       const songSnapshot = await getDoc(songRef);
 
-      // Step 3: Check if song exists
       if (!songSnapshot.exists()) {
         console.error("❌ Song not found with ID:", songId);
         return null;
       }
 
       const rawData = songSnapshot.data();
-      console.log("📄 Raw song data fetched:", rawData);
-
-      // Step 4: Transform Firestore data to UI model format
       const songUIData: Song = {
         id: songSnapshot.id,
         ...rawData,
       } as Song;
 
-      console.log("✅ Song details transformed for UI:", songUIData);
       return songUIData;
     } catch (error) {
       console.error("❌ Error fetching song details:", error);
@@ -353,7 +377,7 @@ export const useNewSong = (songId?: string) => {
     }
   };
 
-  // fonction qui met à jour un chant dans la bdd firestore
+  // Function that updates a song in the Firestore database
   const onUpdate = async (formValues: Record<string, unknown>) => {
     isLoading.value = true;
     try {
@@ -362,13 +386,12 @@ export const useNewSong = (songId?: string) => {
       console.log("🔄 Updating song with ID:", songId);
 
       if (!songId || typeof songId !== "string") {
-        console.error("❌ songId est indéfini ou invalide :", songId);
+        console.error("❌ songId is undefined or invalid:", songId);
         return;
       }
       let values = await sanitizeFirestoreData(
         formValues as unknown as Record<string, unknown>
       );
-      // Create progressive slug with all character variations for precise search
       const slug = createSlugWithWords(values.titre as string);
 
       values = { ...values, slug };
@@ -377,7 +400,6 @@ export const useNewSong = (songId?: string) => {
         const db = getFirestore();
         const songRef = doc(db, "chants", songId);
 
-        // Prépare l'objet à mettre à jour
         const updatePayload: Record<string, any> = {};
         for (const key in values) {
           updatePayload[key] =
@@ -386,9 +408,25 @@ export const useNewSong = (songId?: string) => {
               : values[key];
         }
 
+        // 1. Update the song document
         await updateDoc(songRef, updatePayload);
+
+        // 2. Update region metadata if region and country are specified
+        if (
+          values.region &&
+          typeof values.region === "string" &&
+          values.pays &&
+          typeof values.pays === "string"
+        ) {
+          await updateRegionMetadata(values.region, values.pays);
+        }
+
         console.log("✅ Song updated successfully");
-        clearAllCache();
+
+        if (typeof clearAllCache === "function") {
+          clearAllCache();
+        }
+
         router.replace("/chants");
       } catch (error) {
         console.error("❌ Error updating song:", error);
@@ -401,35 +439,16 @@ export const useNewSong = (songId?: string) => {
   };
 
   /**
-   * Initializes all reference data needed by the form
-   *
-   * Loads data for all dropdown/select controls:
-   * - Geographical regions
-   * - Language options
-   * - Song type classifications
-   * - Thematic categories
-   * - Country information
-   *
-   * This function runs automatically when the component mounts.
+   * Initializes all reference data
    */
   onMounted(() => {
     regions.value = useData.getData("regions") as Region[];
-    console.log("Regions loaded:", regions.value);
     languages.value = useData.getData("languages") as SelectType[];
-    console.log("Languages loaded:", languages.value);
     songTypes.value = useData.getData("songTypes") as SelectType[];
-    console.log("Song types loaded:", songTypes.value);
     themes.value = useData.getData("themes") as SelectType[];
-    console.log("Themes loaded:", themes.value);
     countries.value = useData.getData("countries") as SelectType[];
-    console.log("Countries loaded:", countries.value);
   });
 
-  /**
-   * Returns all necessary functionality for the new song form
-   *
-   * Provides access to form state, validation schema, handlers, and reference data
-   */
   return {
     getSongDetails,
     languages,
