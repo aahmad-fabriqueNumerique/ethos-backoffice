@@ -474,7 +474,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
       }
     } else {
       console.log(
-        "ℹ️ No valid country/region pairs found in upload. Check if your CSV has 'Pays' and 'Region' columns filled."
+        "No valid country/region pairs found in upload. Check if your CSV has 'Pays' and 'Region' columns filled."
       );
     }
 
