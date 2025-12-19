@@ -251,7 +251,7 @@ export const useNewSong = (songId?: string) => {
 
     for (const [key, value] of Object.entries(data)) {
       if (key === "archived") {
-        result[key] = value === undefined ? false : true;
+        result[key] = (value as boolean) ?? false;
       } else if (value === undefined) {
         continue;
       } else if (Array.isArray(value)) {

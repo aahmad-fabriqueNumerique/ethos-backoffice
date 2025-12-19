@@ -574,9 +574,14 @@ watchEffect(() => {
 
     <!-- Archived status -->
     <div class="w-full">
-      <Field v-slot="{ field }" name="archived">
+      <Field v-slot="{ value, handleChange }" name="archived" type="checkbox">
         <div class="flex items-center gap-2">
-          <Checkbox v-bind="field" :binary="true" :input-id="'archived'" />
+          <Checkbox
+            input-id="archived"
+            :model-value="value"
+            :binary="true"
+            @update:model-value="handleChange"
+          />
           <label for="archived">{{ t("newSong.labels.archived") }}</label>
         </div>
       </Field>
