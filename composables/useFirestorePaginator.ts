@@ -574,7 +574,6 @@ export const useFirestorePaginator = <T>(
       const q = query(
         collection(db, "chants"),
         where("slug", "array-contains", normalizedString),
-        where("archived", "==", false),
         limit(10)
       );
       loading.value = true;
