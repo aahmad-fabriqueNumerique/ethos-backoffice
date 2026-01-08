@@ -149,7 +149,7 @@ const FIREBASE_TTL_MS = 1000 * 60 * 45; // 45 minute cache TTL for Firebase even
  * @returns {Promise<FormattedEvent[]>} Array of formatted Firebase events
  */
 async function getCachedFirebaseEvents(
-  db: FirebaseFirestore.Firestore
+  db: FirebaseFirestore.Firestore,
 ): Promise<FormattedEvent[]> {
   const now = Date.now();
 
@@ -206,7 +206,7 @@ async function getCachedFirebaseEvents(
   cachedFirebaseEvents = allFirebaseEvents;
   lastFirebaseFetchTime = now;
   console.log(
-    `[FIREBASE CACHE] Cache updated with ${allFirebaseEvents.length} events.`
+    `[FIREBASE CACHE] Cache updated with ${allFirebaseEvents.length} events.`,
   );
 
   return allFirebaseEvents;
@@ -300,8 +300,8 @@ export default defineEventHandler(async (event) => {
               .filter((k) => k.length > 0);
             return searchKeywords.some((searchKeyword) =>
               event.keywords.some((eventKeyword) =>
-                eventKeyword.toLowerCase().includes(searchKeyword)
-              )
+                eventKeyword.toLowerCase().includes(searchKeyword),
+              ),
             );
           }
           case "name":
@@ -345,7 +345,7 @@ export default defineEventHandler(async (event) => {
   // Apply filters to Firebase events (creating a copy to avoid modifying cached data)
   // And apply the maxFirestoreItems limit after filtering
   const filteredFirestoreEvents = filterEventsList(
-    allFirebaseEvents.slice()
+    allFirebaseEvents.slice(),
   ).slice(0, maxFirestoreItems);
 
   // Construct OpenAgenda API URL with filters
@@ -430,7 +430,7 @@ export default defineEventHandler(async (event) => {
    */
   function transformToEventCard(event: AgendaTradEvent, prefix: string) {
     const thumbnail = event.image?.variants?.find(
-      (v) => v.type === "thumbnail"
+      (v) => v.type === "thumbnail",
     );
     const image = thumbnail ? `${event.image.base}${thumbnail.filename}` : null;
 
@@ -479,7 +479,7 @@ export default defineEventHandler(async (event) => {
   let requestFailed = false;
 
   try {
-    console.log("[API] Fetching from AgendaTrad...");
+    console.log(`[API] ${urlAgendaTrad} : Fetching from AgendaTrad...`);
     const response = (await fetchWithRetry(urlAgendaTrad)) as any;
 
     if (response?.events) {
@@ -487,7 +487,7 @@ export default defineEventHandler(async (event) => {
         openAgendaEvents.push(transformToEventCard(event, "agendatrad_"));
       }
       console.log(
-        `[API] Successfully fetched ${response.events.length} events from AgendaTrad`
+        `[API] Successfully fetched ${response.events.length} events from AgendaTrad`,
       );
     }
   } catch (error) {
@@ -496,7 +496,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    console.log("[API] Fetching from LoCalenDiari...");
+    console.log(`[API] ${urlLoCalenDiari} : Fetching from LoCalenDiari...`);
     const responseLoCalenDiari = (await fetchWithRetry(urlLoCalenDiari)) as any;
 
     if (responseLoCalenDiari?.events) {
@@ -504,12 +504,12 @@ export default defineEventHandler(async (event) => {
         openAgendaEvents.push(
           transformToEventCard(
             { ...event, description: undefined },
-            "localendiari_"
-          )
+            "localendiari_",
+          ),
         );
       }
       console.log(
-        `[API] Successfully fetched ${responseLoCalenDiari.events.length} events from LoCalenDiari`
+        `[API] Successfully fetched ${responseLoCalenDiari.events.length} events from LoCalenDiari`,
       );
     }
   } catch (error) {
@@ -523,14 +523,14 @@ export default defineEventHandler(async (event) => {
       event.title &&
       event.title.trim() !== "" &&
       event.description &&
-      event.description.trim() !== ""
+      event.description.trim() !== "",
   );
 
   // Combine and sort events from both sources (Live Data)
   const combined = sortArrayByDate(
     [...filteredFirestoreEvents, ...filteredOpenAgendaEvents],
     "date",
-    true
+    true,
   );
 
   // Fallback Logic:
@@ -538,12 +538,12 @@ export default defineEventHandler(async (event) => {
   // applying the same filters locally that would have been applied by the API.
   if (requestFailed) {
     console.warn(
-      "[API] Errors detected during fetch. Skipping cache update to preserve data."
+      "[API] Errors detected during fetch. Skipping cache update to preserve data.",
     );
 
     if (cachedEvents) {
       console.log(
-        "[CACHE] Fallback: Serving filtered events from global cache due to API failure."
+        "[CACHE] Fallback: Serving filtered events from global cache due to API failure.",
       );
 
       // Apply the same filters to the global cache that we applied to fresh data
@@ -556,7 +556,7 @@ export default defineEventHandler(async (event) => {
       };
     } else {
       console.error(
-        "[CACHE] No cache available for fallback. Returning partial data."
+        "[CACHE] No cache available for fallback. Returning partial data.",
       );
     }
   } else {
