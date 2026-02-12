@@ -468,7 +468,7 @@ export default defineEventHandler(async (event) => {
   async function fetchWithRetry(url: string) {
     try {
       return await $fetch(url, { timeout: 10000 });
-    } catch (err) {
+    } catch {
       console.warn(`[API] First attempt failed for ${url}. Retrying...`);
       return await $fetch(url, { timeout: 10000 });
     }
