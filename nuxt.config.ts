@@ -2,7 +2,7 @@ import Lara from "@primevue/themes/aura";
 import PrimeUI from "tailwindcss-primeui";
 
 export default defineNuxtConfig({
-  ssr: false,
+  // ssr: false,
   css: ["@/assets/css/main.css", "primeicons/primeicons.css"],
   compatibilityDate: "2024-11-01",
   devtools: { enabled: true },
