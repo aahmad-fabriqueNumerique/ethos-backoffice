@@ -77,11 +77,14 @@ export interface SongCreate extends Omit<SongSummary, "id"> {
   /** Additional descriptive text about the song */
   description?: string;
 
-  /** Web links related to the song (comma or semicolon separated) */
-  urls?: string;
+  /** Links to video recordings of the song */
+  urls?: string[];
+
+  /** External web links displayed below the description */
+  web_urls?: string[];
 
   /** Links to audio/video recordings of the song */
-  urls_musique?: string;
+  urls_musique?: string[];
 
   /** Flag indicating if the song has been archived/removed from active display */
   archived: boolean;

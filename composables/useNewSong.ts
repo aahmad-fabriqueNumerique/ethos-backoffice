@@ -137,6 +137,18 @@ export const useNewSong = (songId?: string) => {
         )
         .optional()
         .default([]),
+      web_urls: z
+        .array(
+          z
+            .string()
+            .transform((val) => (val.trim() === "" ? undefined : val))
+            .optional()
+            .refine((val) => !val || z.string().url().safeParse(val).success, {
+              message: "invalid_url",
+            })
+        )
+        .optional()
+        .default([]),
       urls_musique: z
         .array(
           z
@@ -406,6 +418,10 @@ export const useNewSong = (songId?: string) => {
             values[key] === undefined || values[key] === ""
               ? deleteField()
               : values[key];
+        }
+
+        if (Array.isArray(formValues.web_urls) && !values.web_urls) {
+          updatePayload.web_urls = deleteField();
         }
 
         // 1. Update the song document

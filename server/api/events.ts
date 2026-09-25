@@ -20,8 +20,8 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getApps, type ServiceAccount } from "firebase-admin/app";
-import admin from "firebase-admin";
+import { Timestamp } from "firebase-admin/firestore";
+import { db } from "../utils/firebaseAdmin";
 import { sortArrayByDate } from "../../utils/sortArray";
 import {
   processEventLinks,
@@ -29,7 +29,6 @@ import {
   getLinkType,
 } from "../utils/link-format";
 import type EventModel from "../../models/EventModel";
-import type { Timestamp } from "firebase-admin/firestore";
 import { validateEventsQuery } from "../utils/validation-schemas/events";
 
 /**
@@ -162,7 +161,7 @@ async function getCachedFirebaseEvents(
   console.log("[FIREBASE API] Fetching fresh Firebase events...");
 
   // Current timestamp for filtering events that haven't ended
-  const firestoreNow = admin.firestore.Timestamp.fromDate(new Date());
+  const firestoreNow = Timestamp.fromDate(new Date());
 
   // Fetch ALL upcoming events from Firestore (remove the limit to get all events)
   const firestoreQuery = db
@@ -258,20 +257,6 @@ export default defineEventHandler(async (event) => {
   const openAgendaAPIKey = config.openAgendaAPIKey;
   const agendaTradUID = config.agendaTradUID;
   const loCalenDiariUID = config.loCalenDiariUID;
-
-  // Initialize Firebase Admin if not already initialized
-  if (!getApps().length) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: config.firebaseAdminProjectId,
-        clientEmail: config.firebaseAdminClientEmail,
-        privateKey: config.firebaseAdminPrivateKey?.replace(/\\n/g, "\n"),
-      } as ServiceAccount),
-    });
-  }
-
-  // Access Firestore database
-  const db = admin.firestore();
 
   // Get all Firebase events with 1-hour caching
   const allFirebaseEvents = await getCachedFirebaseEvents(db);
