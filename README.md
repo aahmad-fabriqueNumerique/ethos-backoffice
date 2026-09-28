@@ -22,6 +22,8 @@ bun install
 
 ## Development Server
 
+Copy `.env.example` to `.env.local` and fill in the Firebase Admin and OpenAgenda values. The development command loads `.env.local` explicitly. Restart the server after changing it.
+
 Start the development server on `http://localhost:3000`:
 
 ```bash
