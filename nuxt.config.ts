@@ -5,13 +5,6 @@ export default defineNuxtConfig({
   // ssr: false,
   css: ["@/assets/css/main.css", "primeicons/primeicons.css"],
   compatibilityDate: "2024-11-01",
-  nitro: {
-    vercel: {
-      functions: {
-        runtime: "nodejs24.x",
-      },
-    },
-  },
   devtools: { enabled: true },
   modules: [
     "@nuxt/eslint",
