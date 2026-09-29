@@ -22,7 +22,7 @@
     "@vee-validate/zod": "^4.15.0",
     "eslint": "^9.26.0",
     "firebase": "^11.7.2",
-    "firebase-admin": "^13.4.0",
+    "firebase-admin": "13.10.0",
     "nuxt": "^3.17.3",
     "nuxt-vuefire": "^1.0.5",
     "papaparse": "^5.5.3",
