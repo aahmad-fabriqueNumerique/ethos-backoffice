@@ -91,6 +91,8 @@ interface SongData {
   description: string;
   /** General URLs related to the song */
   urls: string[];
+  /** External web links displayed below the description */
+  web_urls: string[];
   /** Music streaming URLs */
   urls_musique: string[];
   /** Archive status flag */
@@ -619,6 +621,12 @@ function processData(data: any[]): ApiResponse {
 
         urls:
           row["urls"]
+            ?.split(";")
+            .map((s: string) => s.trim())
+            .filter(Boolean) || [],
+
+        web_urls:
+          row["web_urls"]
             ?.split(";")
             .map((s: string) => s.trim())
             .filter(Boolean) || [],

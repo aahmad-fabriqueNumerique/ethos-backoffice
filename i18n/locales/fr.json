@@ -190,6 +190,7 @@
       "context": "Contexte",
       "description": "Description",
       "url": "URL du chant",
+      "webUrl": "Liens web",
       "musicUrl": "URL de la musique",
       "archived": "Archivé"
     },
@@ -208,6 +209,7 @@
       "context": "Sélectionnez un contexte",
       "description": "Entrez une description du chant",
       "url": "Entrez l'URL du chant",
+      "webUrl": "Entrez une URL de site web",
       "musicUrl": "Entrez l'URL de la musique"
     }
   },

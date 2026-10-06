@@ -77,6 +77,10 @@ const removeUrl = (index: number) => {
   urlsList.value.splice(index, 1);
 };
 
+const webUrlsList = ref([""]);
+const addWebUrl = () => webUrlsList.value.push("");
+const removeWebUrl = (index: number) => webUrlsList.value.splice(index, 1);
+
 const urls_musiqueList = ref([""]);
 
 /**
@@ -112,6 +116,7 @@ const handleSubmit: SubmissionHandler<GenericObject> = (
 const handleCancel = () => {
   interpretesList.value = [""]; // Reset to one empty interpreter field
   urlsList.value = [""]; // Reset to one empty URL field
+  webUrlsList.value = [""];
   urls_musiqueList.value = [""]; // Reset to one empty Music URL field
   router.replace({ name: "chants" }); // Navigate back to songs list
 };
@@ -138,6 +143,9 @@ watchEffect(() => {
       // Ensure at least one empty field for new entries
       urlsList.value = [""];
     }
+    webUrlsList.value = Array.isArray(songDetails.web_urls) && songDetails.web_urls.length > 0
+      ? [...songDetails.web_urls]
+      : [""];
     if (
       Array.isArray(songDetails.urls_musique) &&
       songDetails.urls_musique.length > 0
@@ -467,6 +475,24 @@ watchEffect(() => {
           </Message>
         </Field>
       </span>
+    </div>
+
+    <!-- Web links -->
+    <div class="w-full">
+      <h2 class="text-lg mb-2">{{ t("newSong.labels.webUrl") }}</h2>
+      <div v-for="(_, index) in webUrlsList" :key="index" class="flex items-end gap-2 mb-2">
+        <Field v-slot="{ field, errorMessage }" :name="`web_urls[${index}]`" class="flex-1">
+          <span class="flex flex-col gap-y-2 w-full">
+            <label :for="`web-urls-${index}`">{{ t("newSong.labels.webUrl") }} {{ index + 1 }}</label>
+            <InputText :id="`web-urls-${index}`" fluid v-bind="field" :invalid="!!errorMessage" :placeholder="t('newSong.placeholders.webUrl')" />
+            <Message v-if="errorMessage && field.value?.trim()" class="text-xs text-error" severity="error">
+              {{ t(`songs.errors.${errorMessage}`) }}
+            </Message>
+          </span>
+        </Field>
+        <Button v-if="webUrlsList.length > 1" type="button" icon="pi pi-times" class="p-button-rounded p-button-danger p-button-sm" @click="removeWebUrl(index)" />
+      </div>
+      <Button type="button" icon="pi pi-plus" class="my-2" @click="addWebUrl" />
     </div>
 
     <!-- URL fields -->
