@@ -191,6 +191,8 @@
       "description": "Description",
       "url": "URL du chant",
       "webUrl": "Liens web",
+      "comdtAudioUrl": "Liens audio COMDT",
+      "comdtCatalogueSearch": "Rechercher ce chant dans le catalogue COMDT",
       "musicUrl": "URL de la musique",
       "archived": "Archivé"
     },
@@ -210,6 +212,7 @@
       "description": "Entrez une description du chant",
       "url": "Entrez l'URL du chant",
       "webUrl": "Entrez une URL de site web",
+      "comdtAudioUrl": "Entrez l'URL du fichier audio COMDT",
       "musicUrl": "Entrez l'URL de la musique"
     }
   },

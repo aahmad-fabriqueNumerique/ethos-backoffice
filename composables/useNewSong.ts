@@ -149,6 +149,18 @@ export const useNewSong = (songId?: string) => {
         )
         .optional()
         .default([]),
+      urls_audios_comdt: z
+        .array(
+          z
+            .string()
+            .transform((val) => (val.trim() === "" ? undefined : val))
+            .optional()
+            .refine((val) => !val || z.string().url().safeParse(val).success, {
+              message: "invalid_url",
+            })
+        )
+        .optional()
+        .default([]),
       urls_musique: z
         .array(
           z
@@ -422,6 +434,13 @@ export const useNewSong = (songId?: string) => {
 
         if (Array.isArray(formValues.web_urls) && !values.web_urls) {
           updatePayload.web_urls = deleteField();
+        }
+
+        if (
+          Array.isArray(formValues.urls_audios_comdt) &&
+          !values.urls_audios_comdt
+        ) {
+          updatePayload.urls_audios_comdt = deleteField();
         }
 
         // 1. Update the song document

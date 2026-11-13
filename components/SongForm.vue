@@ -81,6 +81,11 @@ const webUrlsList = ref([""]);
 const addWebUrl = () => webUrlsList.value.push("");
 const removeWebUrl = (index: number) => webUrlsList.value.splice(index, 1);
 
+const comdtAudioUrlsList = ref([""]);
+const addComdtAudioUrl = () => comdtAudioUrlsList.value.push("");
+const removeComdtAudioUrl = (index: number) =>
+  comdtAudioUrlsList.value.splice(index, 1);
+
 const urls_musiqueList = ref([""]);
 
 /**
@@ -117,6 +122,7 @@ const handleCancel = () => {
   interpretesList.value = [""]; // Reset to one empty interpreter field
   urlsList.value = [""]; // Reset to one empty URL field
   webUrlsList.value = [""];
+  comdtAudioUrlsList.value = [""];
   urls_musiqueList.value = [""]; // Reset to one empty Music URL field
   router.replace({ name: "chants" }); // Navigate back to songs list
 };
@@ -143,6 +149,11 @@ watchEffect(() => {
       // Ensure at least one empty field for new entries
       urlsList.value = [""];
     }
+    comdtAudioUrlsList.value =
+      Array.isArray(songDetails.urls_audios_comdt) &&
+      songDetails.urls_audios_comdt.length > 0
+        ? [...songDetails.urls_audios_comdt]
+        : [""];
     webUrlsList.value = Array.isArray(songDetails.web_urls) && songDetails.web_urls.length > 0
       ? [...songDetails.web_urls]
       : [""];
@@ -161,6 +172,7 @@ watchEffect(() => {
 
 <template>
   <Form
+    v-slot="{ values }"
     class="flex flex-col gap-y-8"
     :validation-schema="newSongFormSchema"
     :is-loading="isLoading"
@@ -493,6 +505,34 @@ watchEffect(() => {
         <Button v-if="webUrlsList.length > 1" type="button" icon="pi pi-times" class="p-button-rounded p-button-danger p-button-sm" @click="removeWebUrl(index)" />
       </div>
       <Button type="button" icon="pi pi-plus" class="my-2" @click="addWebUrl" />
+    </div>
+
+    <!-- COMDT audio links -->
+    <div class="w-full">
+      <h2 class="text-lg mb-2">
+        {{ t("newSong.labels.comdtAudioUrl") }}
+        <a
+          :href="getComdtCatalogueSearchUrl(values.titre)"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-sm font-normal underline ml-2"
+        >
+          {{ t("newSong.labels.comdtCatalogueSearch") }}
+        </a>
+      </h2>
+      <div v-for="(_, index) in comdtAudioUrlsList" :key="index" class="flex items-end gap-2 mb-2">
+        <Field v-slot="{ field, errorMessage }" :name="`urls_audios_comdt[${index}]`" class="flex-1">
+          <span class="flex flex-col gap-y-2 w-full">
+            <label :for="`comdt-audio-urls-${index}`">{{ t("newSong.labels.comdtAudioUrl") }} {{ index + 1 }}</label>
+            <InputText :id="`comdt-audio-urls-${index}`" fluid v-bind="field" :invalid="!!errorMessage" :placeholder="t('newSong.placeholders.comdtAudioUrl')" />
+            <Message v-if="errorMessage && field.value?.trim()" class="text-xs text-error" severity="error">
+              {{ t(`songs.errors.${errorMessage}`) }}
+            </Message>
+          </span>
+        </Field>
+        <Button v-if="comdtAudioUrlsList.length > 1" type="button" icon="pi pi-times" class="p-button-rounded p-button-danger p-button-sm" @click="removeComdtAudioUrl(index)" />
+      </div>
+      <Button type="button" icon="pi pi-plus" class="my-2" @click="addComdtAudioUrl" />
     </div>
 
     <!-- URL fields -->

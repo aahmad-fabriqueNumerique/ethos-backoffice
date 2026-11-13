@@ -93,6 +93,7 @@ interface SongData {
   urls: string[];
   /** External web links displayed below the description */
   web_urls: string[];
+  urls_audios_comdt: string[];
   /** Music streaming URLs */
   urls_musique: string[];
   /** Archive status flag */
@@ -627,6 +628,12 @@ function processData(data: any[]): ApiResponse {
 
         web_urls:
           row["web_urls"]
+            ?.split(";")
+            .map((s: string) => s.trim())
+            .filter(Boolean) || [],
+
+        urls_audios_comdt:
+          row["urls_audios_comdt"]
             ?.split(";")
             .map((s: string) => s.trim())
             .filter(Boolean) || [],
