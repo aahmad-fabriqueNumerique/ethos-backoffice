@@ -155,8 +155,8 @@ export const useNewSong = (songId?: string) => {
             .string()
             .transform((val) => (val.trim() === "" ? undefined : val))
             .optional()
-            .refine((val) => !val || z.string().url().safeParse(val).success, {
-              message: "invalid_url",
+            .refine((val) => !val || regexComdtAudioUrl.test(val), {
+              message: "invalid_comdt_audio_url",
             })
         )
         .optional()

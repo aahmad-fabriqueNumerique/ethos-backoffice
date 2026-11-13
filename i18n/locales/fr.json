@@ -153,6 +153,7 @@
       "invalid_context": "Le contexte n'est pas valide",
       "invalid_description": "La description n'est pas valide",
       "invalid_url": "L'URL n'est pas valide",
+      "invalid_comdt_audio_url": "L'URL doit être de la forme https://cataloguedoc.comdt.org/COMDT/123456789012/546_12.mp3",
       "invalid_music_url": "L'URL de la musique n'est pas valide",
       "required_song_type": "Un type de chant est requis",
       "invalid_song_type": "Le type de chant n'est pas valide",
@@ -212,7 +213,7 @@
       "description": "Entrez une description du chant",
       "url": "Entrez l'URL du chant",
       "webUrl": "Entrez une URL de site web",
-      "comdtAudioUrl": "Entrez l'URL du fichier audio COMDT",
+      "comdtAudioUrl": "https://cataloguedoc.comdt.org/COMDT/197643591582/546_12.mp3",
       "musicUrl": "Entrez l'URL de la musique"
     }
   },

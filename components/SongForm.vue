@@ -524,6 +524,7 @@ watchEffect(() => {
         <Field v-slot="{ field, errorMessage }" :name="`urls_audios_comdt[${index}]`" class="flex-1">
           <span class="flex flex-col gap-y-2 w-full">
             <label :for="`comdt-audio-urls-${index}`">{{ t("newSong.labels.comdtAudioUrl") }} {{ index + 1 }}</label>
+            <small class="text-gray-500">Format : https://cataloguedoc.comdt.org/COMDT/&lt;id&gt;/&lt;n&gt;_&lt;n&gt;.mp3</small>
             <InputText :id="`comdt-audio-urls-${index}`" fluid v-bind="field" :invalid="!!errorMessage" :placeholder="t('newSong.placeholders.comdtAudioUrl')" />
             <Message v-if="errorMessage && field.value?.trim()" class="text-xs text-error" severity="error">
               {{ t(`songs.errors.${errorMessage}`) }}
