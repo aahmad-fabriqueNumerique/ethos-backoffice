@@ -83,6 +83,9 @@ export interface SongCreate extends Omit<SongSummary, "id"> {
   /** External web links displayed below the description */
   web_urls?: string[];
 
+  /** Audio file links from the COMDT catalogue (https://cataloguedoc.comdt.org) */
+  urls_audios_comdt?: string[];
+
   /** Links to audio/video recordings of the song */
   urls_musique?: string[];
 
