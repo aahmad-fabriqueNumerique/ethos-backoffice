@@ -15,12 +15,22 @@
 // Initialize user store for authentication actions
 const userStore = useUserStore();
 const { t } = useI18n(); // Internationalization for translations
+const route = useRoute();
+
+/** A nav item is active when the current route is (or is under) its target */
+const isActive = (to: string) =>
+  route.path === to || route.path.startsWith(`${to}/`);
 
 /**
  * Navigation menu items configuration
  * Each item includes label, icon, and router destination
  */
 const items = ref([
+  {
+    label: t("navbar.dashboard"),
+    icon: "pi pi-chart-bar",
+    to: "/dashboard",
+  },
   {
     label: t("navbar.events"), // Display name
     icon: "pi pi-home", // PrimeIcons icon
@@ -61,7 +71,13 @@ const items = ref([
         <!-- Router link with ripple effect for navigation items -->
         <NuxtLink
           v-ripple
-          class="flex items-center"
+          class="flex items-center rounded-md px-2 py-1"
+          :class="
+            isActive(item.to)
+              ? 'bg-primary/10 text-primary font-semibold'
+              : ''
+          "
+          :aria-current="isActive(item.to) ? 'page' : undefined"
           v-bind="props.action"
           :to="item.to"
         >

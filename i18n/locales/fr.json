@@ -102,7 +102,43 @@
     "themes": "Thèmes",
     "events": "Événements",
     "users": "Utilisateurs",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "dashboard": "Tableau de bord"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "rangeLabel": "Période",
+    "range": { "7": "7 jours", "30": "30 jours", "90": "90 jours" },
+    "cards": {
+      "songs": "Chants consultés",
+      "sponsors": "Sponsors consultés",
+      "events": "Événements consultés"
+    },
+    "overview": "Consultations par jour",
+    "overviewHint": "Chants, événements et sponsors consultés chaque jour. Cliquez sur une carte pour voir le détail.",
+    "details": {
+      "songs": "Top des chants",
+      "sponsors": "Top des sponsors",
+      "events": "Événements par type"
+    },
+    "columns": {
+      "songs": "Titre du chant",
+      "sponsors": "Sponsor",
+      "events": "Type d'événement",
+      "count": "Consultations",
+      "users": "Utilisateurs"
+    },
+    "notSet": "Non renseigné",
+    "eventTypeRegular": "Standard",
+    "backToChart": "Retour au graphique",
+    "empty": "Aucune donnée sur cette période.",
+    "error": "Impossible de charger les statistiques",
+    "retry": "Réessayer",
+    "shortcuts": {
+      "title": "Raccourcis",
+      "newSong": "Nouveau chant",
+      "newEvent": "Nouvel événement"
+    }
   },
   "pagination": {
     "to": "à",
