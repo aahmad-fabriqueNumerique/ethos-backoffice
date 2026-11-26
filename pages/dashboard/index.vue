@@ -24,6 +24,7 @@ const toggle = (key: IndicatorKey) => {
 
 const cards: { key: IndicatorKey; icon: string }[] = [
     { key: "songs", icon: "pi pi-microphone" },
+    { key: "downloads", icon: "pi pi-download" },
     { key: "sponsors", icon: "pi pi-star" },
     { key: "events", icon: "pi pi-calendar" },
 ];
@@ -41,12 +42,12 @@ const chartSeries = computed(() => {
   const style = import.meta.client ? getComputedStyle(document.documentElement) : null;
   const color = (name: string, fallback: string) =>
     style?.getPropertyValue(name).trim() || fallback;
-  const colors: Record<IndicatorKey, string> = {
+  const colors: Record<Exclude<IndicatorKey, "downloads">, string> = {
     songs: color("--p-primary-500", "#10b981"),
     events: color("--p-orange-500", "#f97316"),
     sponsors: color("--p-violet-500", "#8b5cf6"),
   };
-  return (["songs", "events", "sponsors"] as IndicatorKey[]).map((key) => ({
+  return (["songs", "events", "sponsors"] as const).map((key) => ({
     label: t(`dashboard.cards.${key}`),
     color: colors[key],
     values: data.value![key].daily.map((p) => p.count),
@@ -60,6 +61,7 @@ const selectedIndicator = computed(() =>
 /** Event types are raw values in GA4 ("regular" / "sponsor"): make them readable. */
 const rowLabel = (key: IndicatorKey, label: string) => {
     if (label === "(not set)") return t("dashboard.notSet");
+    if (key === "downloads") return label;
     if (key === "events") {
         return label === "regular"
             ? t("dashboard.eventTypeRegular")
@@ -207,7 +209,7 @@ const shortcuts = [
                         </template>
                     </Column>
                     <Column
-                        :header="t('dashboard.columns.count')"
+                        :header="t(selected === 'downloads' ? 'dashboard.columns.countDownloads' : 'dashboard.columns.count')"
                         field="count"
                         sortable
                     >

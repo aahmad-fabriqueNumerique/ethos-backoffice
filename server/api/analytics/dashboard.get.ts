@@ -1,10 +1,11 @@
 /**
  * Analytics Dashboard API Endpoint
  *
- * Aggregates the three custom GA4 indicators shown on the dashboard:
+ * Aggregates the custom GA4 indicators shown on the dashboard:
  * - songs:    `song_click`            broken down by `customEvent:song_title`
  * - sponsors: `sponsor_details_click` broken down by `customEvent:sponsor_name`
  * - events:   `event_details_click`   broken down by `customEvent:event_type`
+ * - downloads: `first_open`            broken down by `platform` (iOS / Android)
  *
  * For each indicator: total over the period, total over the previous period
  * (for the trend), a daily series (chart) and a top list (details).
@@ -29,6 +30,8 @@ const INDICATORS = {
     eventName: "event_details_click",
     dimension: "customEvent:event_type",
   },
+  // App downloads = first launch of the app (Firebase `first_open`), split by OS
+  downloads: { eventName: "first_open", dimension: "platform" },
 } as const;
 
 type IndicatorKey = keyof typeof INDICATORS;
@@ -44,7 +47,8 @@ const eventFilter = (eventName: string) => ({
 });
 
 /** GA4 returns dates as YYYYMMDD; convert to ISO YYYY-MM-DD. */
-const toIsoDate = (d: string) => `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
+const toIsoDate = (d: string) =>
+  `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
 
 /** Fills missing days with 0 so the chart has a continuous x axis. */
 const fillDailySeries = (rows: Map<string, number>, days: number) => {
@@ -77,38 +81,43 @@ export default defineEventHandler(async (event) => {
         const { eventName, dimension } = INDICATORS[key];
         const dimensionFilter = eventFilter(eventName);
 
-        const [totalRows, previousRows, dailyRows, topRows] = await Promise.all([
-          runReport({
-            dateRanges: [current],
-            dimensions: [],
-            metrics: ["eventCount"],
-            dimensionFilter,
-          }),
-          runReport({
-            dateRanges: [previous],
-            dimensions: [],
-            metrics: ["eventCount"],
-            dimensionFilter,
-          }),
-          runReport({
-            dateRanges: [current],
-            dimensions: ["date"],
-            metrics: ["eventCount"],
-            dimensionFilter,
-            limit: days,
-          }),
-          runReport({
-            dateRanges: [current],
-            dimensions: [dimension],
-            metrics: ["eventCount", "activeUsers"],
-            dimensionFilter,
-            orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
-            limit: 50,
-          }),
-        ]);
+        const [totalRows, previousRows, dailyRows, topRows] = await Promise.all(
+          [
+            runReport({
+              dateRanges: [current],
+              dimensions: [],
+              metrics: ["eventCount"],
+              dimensionFilter,
+            }),
+            runReport({
+              dateRanges: [previous],
+              dimensions: [],
+              metrics: ["eventCount"],
+              dimensionFilter,
+            }),
+            runReport({
+              dateRanges: [current],
+              dimensions: ["date"],
+              metrics: ["eventCount"],
+              dimensionFilter,
+              limit: days,
+            }),
+            runReport({
+              dateRanges: [current],
+              dimensions: [dimension],
+              metrics: ["eventCount", "activeUsers"],
+              dimensionFilter,
+              orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
+              limit: 50,
+            }),
+          ],
+        );
 
         const daily = new Map<string, number>(
-          dailyRows.map((r) => [toIsoDate(r.dimensions[0] ?? ""), r.metrics[0] ?? 0])
+          dailyRows.map((r) => [
+            toIsoDate(r.dimensions[0] ?? ""),
+            r.metrics[0] ?? 0,
+          ]),
         );
 
         return [
@@ -124,13 +133,14 @@ export default defineEventHandler(async (event) => {
             })),
           },
         ] as const;
-      })
+      }),
     );
 
     return { days, ...Object.fromEntries(entries) };
   } catch (err: unknown) {
     // Surface Google errors (createError) as is, wrap anything else
-    if (typeof err === "object" && err !== null && "statusCode" in err) throw err;
+    if (typeof err === "object" && err !== null && "statusCode" in err)
+      throw err;
     throw createError({
       statusCode: 502,
       statusMessage: "Impossible de récupérer les statistiques",

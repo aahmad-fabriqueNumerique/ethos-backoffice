@@ -51,7 +51,7 @@ const trend = computed(() => {
     </span>
     <span
       v-if="!loading && trend !== null"
-      class="text-xs flex items-center gap-1"
+      class="mt-auto text-xs flex items-center gap-1"
       :title="`Par rapport aux ${days} jours précédents`"
       :class="
         trend > 0

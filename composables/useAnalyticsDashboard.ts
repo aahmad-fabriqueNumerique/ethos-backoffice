@@ -7,7 +7,7 @@
 import { getApps } from "firebase/app";
 import { getAuth, onAuthStateChanged, type User } from "firebase/auth";
 
-export type IndicatorKey = "songs" | "sponsors" | "events";
+export type IndicatorKey = "songs" | "sponsors" | "events" | "downloads";
 
 export interface IndicatorTopRow {
   label: string;
