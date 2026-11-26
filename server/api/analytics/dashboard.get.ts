@@ -122,7 +122,7 @@ export default defineEventHandler(async (event) => {
             runReport({
               dateRanges: [current],
               dimensions: [dimension],
-              metrics: ["eventCount", "activeUsers"],
+              metrics: ["eventCount"],
               dimensionFilter,
               orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
               limit: 50,
@@ -146,7 +146,6 @@ export default defineEventHandler(async (event) => {
             top: topRows.map((r) => ({
               label: r.dimensions[0] || NOT_SET,
               count: r.metrics[0] ?? 0,
-              users: r.metrics[1] ?? 0,
             })),
           },
         ] as const;
