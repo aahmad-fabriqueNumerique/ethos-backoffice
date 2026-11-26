@@ -17,6 +17,20 @@ definePageMeta({ layout: "home", title: "Tableau de bord" });
 const { t } = useI18n();
 const { days, data, loading, error, refresh } = useAnalyticsDashboard();
 
+// Loading notice: shown only once (remembered in localStorage)
+const NOTICE_KEY = "dashboard-loading-notice-seen";
+const showNotice = ref(false);
+onMounted(() => {
+    try {
+        if (!localStorage.getItem(NOTICE_KEY)) {
+            showNotice.value = true;
+            localStorage.setItem(NOTICE_KEY, "1");
+        }
+    } catch {
+        // localStorage unavailable: don't show the notice
+    }
+});
+
 const selected = ref<IndicatorKey | null>(null);
 const toggle = (key: IndicatorKey) => {
     selected.value = selected.value === key ? null : key;
@@ -30,9 +44,11 @@ const cards: { key: IndicatorKey; icon: string }[] = [
 ];
 
 const rangeOptions = [
+    { label: t("dashboard.range.all"), value: 0 },
     { label: t("dashboard.range.7"), value: 7 },
     { label: t("dashboard.range.30"), value: 30 },
     { label: t("dashboard.range.90"), value: 90 },
+    { label: t("dashboard.range.365"), value: 365 },
 ];
 
 // Global chart: stacked daily bars, one series per indicator
@@ -120,6 +136,10 @@ const shortcuts = [
                 />
             </span>
         </Message>
+
+        <p v-if="loading && showNotice" class="text-sm text-surface-500">
+            {{ t("dashboard.loadingNotice") }}
+        </p>
 
         <!-- KPI cards -->
         <section

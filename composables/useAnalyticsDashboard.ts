@@ -25,7 +25,7 @@ export interface Indicator {
 export type DashboardData = { days: number } & Record<IndicatorKey, Indicator>;
 
 export const useAnalyticsDashboard = () => {
-  const days = ref(30);
+  const days = ref(0);
   const data = ref<DashboardData | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);

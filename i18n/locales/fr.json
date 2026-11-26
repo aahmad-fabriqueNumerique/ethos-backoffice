@@ -108,7 +108,14 @@
   "dashboard": {
     "title": "Tableau de bord",
     "rangeLabel": "Période",
-    "range": { "7": "7 jours", "30": "30 jours", "90": "90 jours" },
+    "loadingNotice": "Le premier chargement des statistiques peut mettre une dizaine de secondes.",
+    "range": {
+      "all": "Depuis le début",
+      "7": "7 jours",
+      "30": "30 jours",
+      "90": "90 jours",
+      "365": "1 an"
+    },
     "cards": {
       "songs": "Chants consultés",
       "downloads": "Téléchargements",

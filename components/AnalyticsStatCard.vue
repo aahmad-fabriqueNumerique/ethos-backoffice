@@ -50,7 +50,7 @@ const trend = computed(() => {
       {{ total.toLocaleString("fr-FR") }}
     </span>
     <span
-      v-if="!loading && trend !== null"
+      v-if="!loading && days > 0 && trend !== null"
       class="mt-auto text-xs flex items-center gap-1"
       :title="`Par rapport aux ${days} jours précédents`"
       :class="

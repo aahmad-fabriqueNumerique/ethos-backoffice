@@ -13,7 +13,7 @@
  * Authentication: Firebase ID token with the `admin` role.
  *
  * Query parameters:
- * - days: 7 | 30 | 90 (default 30)
+ * - days: 0 (since the beginning) | 7 | 30 | 90 | 365 (default 30)
  *
  * @route GET /api/analytics/dashboard
  * @security Bearer token
@@ -36,7 +36,9 @@ const INDICATORS = {
 
 type IndicatorKey = keyof typeof INDICATORS;
 
-const ALLOWED_DAYS = [7, 30, 90];
+const ALLOWED_DAYS = [0, 7, 30, 90, 365];
+// days = 0 means "since the beginning" (GA4 launch date as lower bound)
+const ALL_TIME_START = "2015-08-14";
 const NOT_SET = "(not set)";
 
 const eventFilter = (eventName: string) => ({
@@ -51,9 +53,17 @@ const toIsoDate = (d: string) =>
   `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
 
 /** Fills missing days with 0 so the chart has a continuous x axis. */
-const fillDailySeries = (rows: Map<string, number>, days: number) => {
+const fillDailySeries = (rows: Map<string, number>, requestedDays: number) => {
   const series: { date: string; count: number }[] = [];
   const today = new Date();
+  let days = requestedDays;
+  if (days === 0) {
+    // Since the beginning: start at the first day with data
+    const first = [...rows.keys()].sort()[0];
+    days = first
+      ? Math.floor((today.getTime() - new Date(first).getTime()) / 86400000) + 1
+      : 1;
+  }
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
@@ -69,7 +79,11 @@ export default defineEventHandler(async (event) => {
   const requestedDays = Number(getQuery(event).days);
   const days = ALLOWED_DAYS.includes(requestedDays) ? requestedDays : 30;
 
-  const current = { startDate: `${days - 1}daysAgo`, endDate: "today" };
+  const allTime = days === 0;
+  const current = {
+    startDate: allTime ? ALL_TIME_START : `${days - 1}daysAgo`,
+    endDate: "today",
+  };
   const previous = {
     startDate: `${days * 2 - 1}daysAgo`,
     endDate: `${days}daysAgo`,
@@ -89,18 +103,21 @@ export default defineEventHandler(async (event) => {
               metrics: ["eventCount"],
               dimensionFilter,
             }),
-            runReport({
-              dateRanges: [previous],
-              dimensions: [],
-              metrics: ["eventCount"],
-              dimensionFilter,
-            }),
+            // No previous period to compare with when looking at all time
+            allTime
+              ? Promise.resolve([])
+              : runReport({
+                  dateRanges: [previous],
+                  dimensions: [],
+                  metrics: ["eventCount"],
+                  dimensionFilter,
+                }),
             runReport({
               dateRanges: [current],
               dimensions: ["date"],
               metrics: ["eventCount"],
               dimensionFilter,
-              limit: days,
+              limit: allTime ? 10000 : days,
             }),
             runReport({
               dateRanges: [current],
