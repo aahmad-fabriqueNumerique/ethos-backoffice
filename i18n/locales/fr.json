@@ -115,7 +115,7 @@
       "events": "Événements consultés"
     },
     "overview": "Consultations par jour",
-    "overviewHint": "Chants, événements et sponsors consultés chaque jour. Cliquez sur une carte pour voir le détail.",
+    "overviewHint": "Chants, événements et sponsors consultés chaque jour.",
     "details": {
       "songs": "Top des chants",
       "sponsors": "Top des sponsors",
