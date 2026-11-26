@@ -1,77 +1,41 @@
-# Nuxt Minimal Starter
+# Backoffice Ethos
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Backoffice Nuxt 3 (PrimeVue, Tailwind, Pinia) connecté à Firebase et OpenAgenda.
 
-## Setup
-
-Make sure to install dependencies:
+## Démarrage
 
 ```bash
-# npm
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
+npm run setup   # configure et teste les variables d'environnement
+npm run dev     # http://localhost:3000
 ```
 
-## Development Server
+## Configuration (`npm run setup`)
 
-Copy `.env.example` to `.env.local` and fill in the Firebase Admin and OpenAgenda values. The development command loads `.env.local` explicitly. Restart the server after changing it.
+Assistant interactif dans le terminal :
 
-Start the development server on `http://localhost:3000`:
+- choisissez un service (Firebase client, Firebase Admin, OpenAgenda, dossier d'upload) et saisissez ses variables ;
+- la connexion est testée, une coche verte ✔ apparaît dans le menu quand elle est vérifiée ;
+- quand tout est vert, la dernière option **Créer le .env** écrit le fichier.
 
-```bash
-# npm
-npm run dev
+Firebase Admin accepte aussi le chemin du JSON de compte de service pour remplir les valeurs automatiquement.
 
-# pnpm
-pnpm dev
+Sans l'assistant, copiez `.env.example` vers `.env` et remplissez-le à la main. `.env.local` est aussi pris en compte et prioritaire sur `.env`. Redémarrez `npm run dev` après toute modification.
 
-# yarn
-yarn dev
+## Variables d'environnement
 
-# bun
-bun run dev
-```
+| Variable | Usage |
+| --- | --- |
+| `NUXT_PUBLIC_FIREBASE_*` | Config Firebase côté client (5 variables) |
+| `FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_ADMIN_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` | Firebase Admin (serveur) |
+| `OPENAGENDA_API_KEY`, `AGENDA_TRAD_UID`, `LO_CALEN_DIARI_UID` | API OpenAgenda |
+| `TMP_UPLOADS_DIR` | Dossier temporaire d'upload (optionnel, `/tmp` par défaut) |
 
-## Production
+## Commandes
 
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+| Commande | Rôle |
+| --- | --- |
+| `npm run setup` | Configure et teste les services |
+| `npm run dev` | Serveur de développement |
+| `npm run build` | Build de production |
+| `npm run preview` | Prévisualise le build |
