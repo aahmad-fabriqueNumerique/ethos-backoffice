@@ -12,7 +12,6 @@ export type IndicatorKey = "songs" | "sponsors" | "events" | "downloads";
 export interface IndicatorTopRow {
   label: string;
   count: number;
-  users: number;
 }
 
 export interface Indicator {

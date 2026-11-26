@@ -13,7 +13,11 @@ const props = defineProps<{
 }>();
 
 const fmt = (iso: string) =>
-  new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+  new Date(iso).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 
 const chartData = computed(() => ({
   labels: props.dates.map(fmt),

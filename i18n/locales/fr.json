@@ -124,6 +124,7 @@
     },
     "overview": "Consultations par jour",
     "overviewHint": "Chants, événements et sponsors consultés chaque jour.",
+    "overviewHintAllTime": "Les données commencent fin août 2025, date de la mise en place de Google Analytics : aucune statistique n'est disponible avant.",
     "details": {
       "songs": "Top des chants",
       "sponsors": "Top des sponsors",
@@ -136,8 +137,7 @@
       "events": "Type d'événement",
       "downloads": "Plateforme",
       "countDownloads": "Téléchargements",
-      "count": "Consultations",
-      "users": "Utilisateurs"
+      "count": "Consultations"
     },
     "notSet": "Non renseigné",
     "eventTypeRegular": "Standard",

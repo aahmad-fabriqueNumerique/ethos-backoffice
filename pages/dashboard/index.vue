@@ -176,6 +176,9 @@ const shortcuts = [
                 />
                 <p class="text-sm text-surface-500">
                     {{ t("dashboard.overviewHint") }}
+                    <template v-if="days === 0">
+                        {{ t("dashboard.overviewHintAllTime") }}
+                    </template>
                 </p>
             </template>
 
@@ -251,11 +254,6 @@ const shortcuts = [
                             </div>
                         </template>
                     </Column>
-                    <Column
-                        :header="t('dashboard.columns.users')"
-                        field="users"
-                        sortable
-                    />
                 </DataTable>
             </template>
         </section>
